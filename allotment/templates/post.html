@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="page-heading"><h1>Post</h1><div class="media-actions"><a class="button secondary" href="{{ url_for('garden',namespace=namespace,user=user) }}">All posts</a><a class="button primary" href="{{ url_for('compose',namespace=namespace,user=user,post_id=post.id) }}">Edit post</a></div></div>
+
+<div class="post-workbench"><div><article class="panel single-post"><header class="post-top"><strong>{{ profile.display_name }}</strong><time>{{ post.created_at|date }}</time><span class="badge">{{ 'Published locally' if published else 'Draft' }}</span>{% if published and post.status=='draft' %}<span class="badge draft">Local edits</span>{% endif %}</header><p class="post-text">{{ post.text }}</p>{% include 'link_cards.html' %}
+
+<div class="post-media">{% for a in post.attachments %}{% if a.type=='image' %}<img src="{{ asset_url(namespace,user,post,a) }}" alt="{{ a.alt or 'Post image' }}" data-variant-preview="{{ loop.index0 }}">{% else %}<video controls src="{{ asset_url(namespace,user,post,a) }}"></video>{% endif %}{% endfor %}</div>
+
+<div class="post-tags">{% for tag in catalogue if tag.id in post.get('tags',[]) %}<a href="{{ url_for('garden',namespace=namespace,user=user,tag=tag.id) }}">{{ tag.name }}</a>{% endfor %}</div>
+
+<a class="post-permalink" href="{{ url_for('post_page',namespace=namespace,user=user,post_id=post.id) }}">Permalink · {{ post.id }}</a></article>
+
+<section class="panel"><h2>Local publication</h2><form method="post" action="{{ url_for('local_publication',namespace=namespace,user=user,post_id=post.id,action='publish' if post.status=='draft' or not published else 'unpublish') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button {{ 'primary' if post.status=='draft' or not published else 'secondary' }}">{{ 'Publish edits locally' if published and post.status=='draft' else 'Publish locally' if not published else 'Unpublish locally' }}</button></form></section></div><div>
+
+{% include 'sow_panel.html' %}
+{% include 'inspect_panel.html' %}
+
+<details class="panel" data-launch-history><summary>Launch history · {{ jobs|length }}</summary>
+
+{% if published %}<div class="publication-summary"><strong>The Allotment</strong><span class="badge published">Published</span><time>{{ published.published_at|date }}</time>{% if published.legacy %}<span>Imported</span>{% endif %}</div>{% endif %}
+
+{% for job in jobs %}<article class="post-job"><div class="section-heading"><time>{{ job.created_at|date }}</time></div>
+
+{% for action,receipt in job.actions.items() %}<div class="action-row"><div class="action-detail"><strong>{{ builtin_names.get(action,plugins.get(action,{}).get('name',action)) }}</strong>{% if receipt.url %}<a href="{{ receipt.url }}" target="_blank" rel="noopener">Open published link</a>{% endif %}{% if receipt.status=='prepared' %}<p>Draft ready. Submit it manually, then record its link.</p>{% endif %}{% if receipt.error %}<p class="action-error">{{ receipt.error }}</p>{% endif %}{% if receipt.review %}<p>{{ "✓ Marked successful" if receipt.review.verdict=="successful" else "✕ Marked not successful" }}</p>{% endif %}</div><span class="badge {{ receipt.status }}">{{ 'Not started' if receipt.status=='pending' else 'Published' if receipt.status=='succeeded' else receipt.status|title }}</span></div>
+
+{% if receipt.status in ['prepared','uncertain'] %}<form class="resolve-form" method="post" action="{{ url_for('resolve',namespace=namespace,user=user,job_id=job.id,action=action) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="return_to" value="post"><label>Published URL<input type="url" name="url" required placeholder="https://"></label><button class="button secondary">Record published link</button></form>{% endif %}{% endfor %}</article>
+
+{% else %}{% if not published %}<p>No destinations published yet.</p>{% endif %}{% endfor %}</details>
+
+</div></div>
+
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static',filename='post.js') }}" defer></script>{% endblock %}
+

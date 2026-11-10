@@ -1,0 +1,72 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: preparation_only_not_live_verified
+max_media: 1
+media_types:
+- image
+id: discord
+name: Discord
+base_url: https://discord.com
+max_chars: 2000
+target_required: true
+target_kind: channel
+target_label: Server channel
+target_path_pattern: /channels/[0-9]+/[0-9]+/?
+target_hint: Use the existing server channel URL with numeric server/channel IDs and
+  its exact heading. DMs and invite links are blocked.
+setup_note: Preparation only. Set the posting account. Account, heading and image-caption
+  selectors must be checked against the current client.
+steps:
+- command: prepare_navigate
+  label: Open the configured server channel
+  url: '{{ target_url }}'
+  seconds: 3
+- command: prepare_identity
+  label: Check the signed-in Discord account
+  selector: '[aria-label="User area"]'
+- command: prepare_target
+  label: Check the exact channel heading
+  selector: main section [class*="titleWrapper"] h1
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: '[role="textbox"][data-slate-editor="true"]'
+  text: 'Message #{{ target_name }}'
+  region:
+  - 0.2
+  - 0.3
+  - 1
+  - 0.99
+- command: prepare_image
+  label: Paste an image into the draft
+  when: media
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: '[role="dialog"] [role="textbox"]'
+  text: Add a comment (optional)
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  when: media
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Check the draft caption
+- command: prepare_finish
+  label: Check the draft and stop without sending
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: false

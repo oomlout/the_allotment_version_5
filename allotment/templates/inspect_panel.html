@@ -1,0 +1,25 @@
+<details class="panel post-inspect" id="inspect-panel" {% if current_run and current_run.kind=='harvest' %}open{% endif %}>
+<summary><h2>Inspect</h2></summary>
+<div data-inspect-progress></div>
+<h3><span class="platform-logo sow-logo" aria-hidden="true" style="--platform-logo:url('{{ url_for('static',filename='platform-logos/bluesky.svg') }}')"></span> Bluesky</h3>
+{% for mode,label in [('ids','Capture post ID'),('reactions','Inspect reactions')] %}
+<form class="harvest-form" method="post" action="{{ url_for('harvest_post',namespace=namespace,user=user,post_id=post.id) }}">
+<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="platform" value="bluesky"><input type="hidden" name="mode" value="{{ mode }}"><input type="hidden" name="test" value="{{ '0' if harvest.approved[mode] else '1' }}">
+<button class="button secondary" {% if not published or (mode=='reactions' and not harvest.latest) %}disabled{% endif %}>{{ label if harvest.approved[mode] else 'Test: '+label }}</button>
+</form>{% endfor %}
+{% for run in harvest.tests %}<form method="post" action="{{ url_for('approve_harvest',namespace=namespace,user=user,run_id=run.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><p>{{ 'Post ID' if run.mode=='ids' else 'Reactions' }} test complete. Review the findings below.</p><button class="button secondary">Approve {{ 'ID capture' if run.mode=='ids' else 'reaction inspection' }}</button></form>{% endfor %}
+<div data-inspect-findings>
+{% if harvest.latest %}
+<p><a class="inspect-post-link" href="{{ harvest.latest.url }}" target="_blank" rel="noopener">Open post ↗</a> · <code>{{ harvest.latest.post_id }}</code></p>
+{% set findings=harvest.reactions or harvest.latest %}
+<p class="inspect-captured">Captured <time datetime="{{ findings.captured_at }}">{{ findings.captured_at[:16]|replace('T',' ') }} UTC</time></p>
+{% if harvest.reactions %}
+<dl class="metrics">{% for key,value in harvest.reactions.counts.items() %}<div><dt>{{ key|title }}</dt><dd>{{ ('≈ ' if value.approximate else '') ~ value.value if value else 'Unavailable' }}</dd></div>{% endfor %}</dl>
+<h3>Replies · {{ harvest.reactions.replies|length }}</h3>
+{% for reply in harvest.reactions.replies %}<article class="inspect-reply"><a href="{{ reply.url }}" target="_blank" rel="noopener"><strong>@{{ reply.author }}</strong> ↗</a><p>{{ reply.text }}</p></article>{% else %}<p>No visible replies captured.</p>{% endfor %}
+<p class="inspect-scope">{{ harvest.reactions.availability }}</p>
+{% for limit in harvest.reactions.limits %}<p class="action-error">{{ limit }}</p>{% endfor %}
+{% else %}<p>Post identified. Inspect reactions to collect counts and replies.</p>{% endif %}
+{% else %}<p>No findings yet. Capture the post ID first.</p>{% endif %}
+</div>
+</details>

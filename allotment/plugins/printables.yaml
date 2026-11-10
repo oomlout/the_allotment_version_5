@@ -1,0 +1,55 @@
+id: printables
+name: Printables
+badge: P
+base_url: https://www.printables.com
+max_chars: 2000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Checks the signed-in community identity and prepares a regular image post.
+  Final Post stays manual.
+steps:
+- command: prepare_navigate
+  url: '{{ base_url }}/community'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.213
+  - 0.228
+  - 0.28
+  - 0.248
+- command: prepare_visual_focus
+  text: What's new?
+  region:
+  - 0.36
+  - 0.46
+  - 0.45
+  - 0.5
+- command: prepare_text
+- command: prepare_verify_text
+- command: prepare_open
+  template: attach.png
+  region:
+  - 0.33
+  - 0.53
+  - 0.39
+  - 0.8
+  file_picker: true
+- command: prepare_upload_image
+- command: prepare_finish
+  region:
+  - 0.325
+  - 0.4
+  - 0.665
+  - 0.99
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75

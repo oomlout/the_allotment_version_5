@@ -1,0 +1,60 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: preparation_only_not_live_verified
+max_media: 1
+media_types:
+- image
+id: twitter
+name: Twitter / X
+base_url: https://x.com
+handle_pattern: '[A-Za-z0-9_]{1,15}'
+max_chars: 280
+setup_note: Preparation only. Starting selectors require checking against the current
+  X layout. Publish test and queued publishing are blocked.
+steps:
+- command: prepare_navigate
+  label: Open the account profile
+  url: '{{ base_url }}/{{ handle }}'
+  seconds: 3
+- command: prepare_identity
+  label: Check the signed-in account and profile owner
+  selector: '[data-testid="SideNav_AccountSwitcher_Button"]'
+  owner_selector: a[href="/settings/profile"]
+  owner_text: Edit profile
+- command: prepare_navigate
+  label: Open a draft composer
+  url: '{{ base_url }}/compose/post'
+  seconds: 2
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: '[data-testid="tweetTextarea_0"][contenteditable="true"]'
+  text: What is happening?!
+  region:
+  - 0.2
+  - 0.08
+  - 0.8
+  - 0.6
+  panel: true
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Copy back and check the draft text
+- command: prepare_image
+  label: Paste the fixed sample image
+  when: media
+- command: prepare_finish
+  label: Check the draft and stop without sending
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: false

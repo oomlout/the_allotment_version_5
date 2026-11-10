@@ -1,0 +1,32 @@
+<details open class="panel post-destinations" id="sow-panel" data-status-url="{{ url_for('sow_status',namespace=namespace,user=user,post_id=post.id) }}" data-csrf="{{ csrf }}" data-published="{{ 'true' if published and post.status!='draft' else 'false' }}">
+<summary><h2>Sow</h2></summary>
+<div data-sow-progress></div>
+{% if not published or post.status=='draft' %}<p>Publish the local post or its edits before sowing.</p>{% endif %}
+<div class="sow-progress" id="job-run" {% if not current_run %}hidden{% endif %}>
+<strong id="job-run-state" role="status">{{ current_run.status|title if current_run else '' }}</strong><span id="job-run-countdown"></span>
+<p data-run-detail></p><progress data-run-progress max="1" value="0" hidden></progress>
+<p id="job-run-error" class="action-error">{{ current_run.get('error','') if current_run else '' }}</p>
+<p data-handoff hidden>Keep Chrome visible. Release mouse and keyboard after the countdown. F8 stops.</p>
+<form data-job-control method="post" {% if current_run %}action="{{ url_for('job_run_control',namespace=namespace,user=user,run_id=current_run.id) }}"{% endif %}>
+<input type="hidden" name="csrf" value="{{ csrf }}"><button class="button secondary small" name="action" value="pause" hidden>Pause</button><button class="button secondary small" name="action" value="resume" hidden>Resume</button><button class="button danger small" name="action" value="stop" hidden>Stop</button>
+</form></div>
+<form method="post" data-sow-launch action="{{ url_for('launch_post',namespace=namespace,user=user,post_id=post.id) }}">
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<div class="destination-options">{% for d in destinations %}
+<div class="destination-option sow-destination" data-destination="{{ d.id }}" data-name="{{ d.name }}" data-configured="{{ 'true' if d.configured else 'false' }}" data-review-url="{{ url_for('sow_review',namespace=namespace,user=user,post_id=post.id,job_id=d.state.job_id,action=d.id) if d.state.job_id else '' }}">
+<div class="sow-destination-heading"><div class="check-label" title="{{ 'Test required' if not d.configured else d.view.label }}"><input type="checkbox" name="actions" value="{{ d.id }}" aria-label="Select {{ d.name }}" {% if d.needs_test %}disabled{% endif %}>
+{% if d.id in plugins %}<span class="platform-logo sow-logo" aria-hidden="true" style="--platform-logo:url('{{ url_for('static',filename='platform-logos/'+d.id+'.svg') }}')"></span>{% else %}<svg class="sow-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h10l4 4v14H5z M14 3v5h5 M8 12h8 M8 16h8"/></svg>{% endif %}{% if d.target %}<a class="sow-platform-name" href="{{ d.target }}" target="_blank" rel="noopener"><strong>{{ d.name }}</strong></a>{% else %}<strong>{{ d.name }}</strong>{% endif %}</div>
+<div class="sow-review" data-review {% if not d.view.reviewable %}hidden{% endif %}>
+<button type="button" class="button secondary small" data-verdict="successful" aria-pressed="{{ 'true' if d.view.verdict=='successful' else 'false' }}" aria-label="Mark {{ d.name }} as posted" title="{{ 'Posted — confirmed by you' if d.view.verdict=='successful' else 'Mark as posted' }}">✓</button>
+<button type="button" class="button secondary small" data-verdict="unsuccessful" aria-pressed="false" aria-label="Reset {{ d.name }} for another attempt" title="Reset for another attempt" {% if d.view.verdict=='successful' %}hidden{% endif %}>✕</button>
+</div><a data-destination-link href="{{ d.state.url or '#' }}" target="_blank" rel="noopener" aria-label="Open {{ d.name }} link" title="Open link" {% if not d.state.url %}hidden{% endif %}>↗</a></div>
+<span class="sr-only" data-destination-status role="status">{{ d.view.label }}</span>
+<p class="action-error" data-destination-error {% if d.needs_test %}hidden{% endif %} title="{{ d.view.error }}">{{ d.view.error }}</p>
+<p class="action-error" data-testing-required {% if not d.needs_test %}hidden{% endif %}>Platform needs testing. <a href="{{ d.test_url }}">Open test</a></p>
+</div>{% endfor %}</div>
+<details class="post-overrides"><summary>Overrides for this post</summary><div class="defaults-grid">{% for d in destinations %}<label>{{ d.name }}<select name="frame_{{ d.id }}"><option value="default">Default · {{ framing_choices[framing[d.id]] }}</option>{% for key,label in framing_choices.items() %}<option value="{{ key }}" {% if post.get('sowing_overrides',{}).get(d.id,{}).get('framing')==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>{% endfor %}</div><a href="{{ url_for('framing_defaults',namespace=namespace,user=user) }}">Edit platform defaults</a></details>
+<div class="creation-actions"><button class="button primary" data-launch type="submit" {% if not published or post.status=='draft' %}disabled{% endif %}>Launch</button><span data-selection-status>Select destinations.</span></div>
+<p class="sow-note">Website and summary are always built. Social posts stay unsent until you submit them manually.</p>
+<p class="action-error" data-sow-error role="alert" hidden></p>
+<a class="button secondary small" data-platform-setup hidden>Open platform test</a>
+</form></details>

@@ -1,0 +1,74 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+id: discord
+name: Discord
+base_url: https://discord.com
+max_chars: 2000
+target_required: true
+target_kind: channel
+target_label: Server channel
+target_path_pattern: /channels/[0-9]+/[0-9]+/?
+target_hint: Use the existing server channel URL with numeric server/channel IDs and
+  its exact heading. DMs and invite links are blocked.
+setup_note: Prepares an unsent draft in the exact configured server channel. Final
+  Send remains manual.
+steps:
+- command: prepare_navigate
+  label: Open the configured server channel
+  url: '{{ target_url }}'
+  seconds: 3
+- command: prepare_visual_identity
+  label: Check the signed-in Discord user
+  region:
+  - 0.025
+  - 0.93
+  - 0.1
+  - 0.97
+- command: prepare_visual_target
+  label: Check the exact server channel
+  region:
+  - 0.215
+  - 0.115
+  - 0.32
+  - 0.155
+  kind_text: Message
+  empty_editor: true
+  kind_region:
+  - 0.23
+  - 0.93
+  - 0.35
+  - 0.98
+- command: prepare_visual_focus
+  label: Focus the channel draft
+  text: Message
+  region:
+  - 0.23
+  - 0.93
+  - 0.35
+  - 0.98
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Copy back and check the draft text
+- command: prepare_image
+  label: Attach the sample without sending
+  when: media
+- command: prepare_finish
+  label: Check the attachment and leave Send manual
+  region:
+  - 0.2
+  - 0.2
+  - 1
+  - 0.99
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: true

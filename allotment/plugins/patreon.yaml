@@ -1,0 +1,25 @@
+id: patreon
+name: Patreon Quips
+badge: P
+base_url: https://www.patreon.com
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: false
+inspection_only: true
+verification: blocked_quip_unavailable
+content_kind: quip
+keep_page_unpublished: true
+max_chars: 10000
+max_media: 1
+media_types:
+- image
+setup_note: Creator page must remain unpublished. Current Create control opens a regular
+  post; no Quip option was found. Keep blocked until a Quip composer is available.
+  Never substitute a regular post or publish the page.
+steps:
+- command: prepare_navigate
+  url: '{{ profile_url }}'
+  label: Inspect creator page without publishing
+  seconds: 4

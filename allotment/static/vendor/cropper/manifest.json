@@ -1,0 +1,12 @@
+{
+  "name": "cropperjs",
+  "version": "1.7.0",
+  "repository": "https://github.com/fengyuanchen/cropperjs",
+  "license": "MIT",
+  "source": "https://raw.githubusercontent.com/fengyuanchen/cropperjs/v1.7.0/",
+  "sha256": {
+    "cropper.min.js": "b0d53f85afe17a98d0f065c6da672273b576ddcc3e1187a1a57446dafec4f805",
+    "cropper.min.css": "1e85e4cea376f4d81577f9bdc059c2765e9055663ec087e77064abb4930ac75d",
+    "LICENSE": "eb917650781dcf06a60b97cba9b05bf583931ec2d311d8a5548a8dca90a57e0f"
+  }
+}

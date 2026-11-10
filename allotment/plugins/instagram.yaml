@@ -1,0 +1,108 @@
+id: instagram
+name: Instagram
+badge: I
+base_url: https://www.instagram.com
+max_chars: 2200
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Prepares the full image and caption. Share stays manual.
+steps:
+- command: prepare_navigate
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.409
+  - 0.145
+  - 0.515
+  - 0.175
+  owner_text: Edit Profile
+  owner_region:
+  - 0.38
+  - 0.31
+  - 0.43
+  - 0.335
+  profile_url: '{{ profile_url }}'
+- command: prepare_open
+  template: create.png
+  region:
+  - 0.007
+  - 0.56
+  - 0.035
+  - 0.61
+  seconds: 1
+- command: prepare_open
+  template: add-image.png
+  region:
+  - 0.08
+  - 0.61
+  - 0.11
+  - 0.66
+  seconds: 1
+- command: prepare_open
+  text: Select From Computer
+  region:
+  - 0.44
+  - 0.6
+  - 0.55
+  - 0.64
+  file_picker: true
+- command: prepare_upload_image
+- command: prepare_open
+  template: crop.png
+  region:
+  - 0.3
+  - 0.85
+  - 0.335
+  - 0.9
+- command: prepare_open
+  text: Original
+  region:
+  - 0.31
+  - 0.67
+  - 0.345
+  - 0.71
+- command: prepare_open
+  text: Next
+  region:
+  - 0.66
+  - 0.17
+  - 0.685
+  - 0.195
+  seconds: 1
+- command: prepare_open
+  text: Next
+  region:
+  - 0.75
+  - 0.17
+  - 0.775
+  - 0.195
+  seconds: 1
+- command: prepare_visual_focus
+  text: Add a caption...
+  region:
+  - 0.605
+  - 0.26
+  - 0.69
+  - 0.29
+- command: prepare_text
+- command: prepare_verify_text
+- command: prepare_finish
+  region:
+  - 0.2
+  - 0.2
+  - 0.62
+  - 0.92
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+min_media: 1

@@ -1,0 +1,116 @@
+{
+  "bluesky": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/bluesky.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "discord": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/discord.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "facebook": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/facebook.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "flickr": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/flickr.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "instagram": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/instagram.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "makerworld": {
+    "source": "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/59f1e9a4108f4f510f41e9588f078631de1e1405/svg/maker-world.svg",
+    "collection": "dashboard",
+    "commit": "59f1e9a4108f4f510f41e9588f078631de1e1405",
+    "license": "See dashboard-LICENSE.txt; brand rights retained"
+  },
+  "mastodon": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/mastodon.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "medium": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/medium.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "patreon": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/patreon.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "pixelfed": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/pixelfed.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "printables": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/printables.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "telegram": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/telegram.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "telegram_channel": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/telegram.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "threads": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/threads.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "tumblr": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/tumblr.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "twitter": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/x.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "whatsapp": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/whatsapp.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "whatsapp_channel": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/whatsapp.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  },
+  "facebook_business": {
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/c8a98c7099c33a8ef8461dd97263235f348e7077/icons/facebook.svg",
+    "collection": "simple",
+    "commit": "c8a98c7099c33a8ef8461dd97263235f348e7077",
+    "license": "CC0-1.0"
+  }
+}

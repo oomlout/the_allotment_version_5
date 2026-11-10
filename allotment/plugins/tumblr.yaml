@@ -1,0 +1,86 @@
+id: tumblr
+name: Tumblr
+badge: t
+base_url: https://www.tumblr.com
+max_chars: 10000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Chooses Photo for image input and Text for text-only input. Post now stays
+  manual. Video is not yet supported.
+steps:
+- command: prepare_navigate
+  url: '{{ base_url }}/blog/{{ handle }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.635
+  - 0.25
+  - 0.68
+  - 0.277
+  owner_text: Blog settings
+  owner_region:
+  - 0.635
+  - 0.6
+  - 0.7
+  - 0.625
+  profile_url: '{{ base_url }}/blog/{{ handle }}'
+- command: prepare_navigate
+  when: media
+  url: '{{ base_url }}/new/photo?name={{ handle }}'
+  seconds: 4
+- command: prepare_navigate
+  when: no_media
+  url: '{{ base_url }}/new/text?name={{ handle }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.385
+  - 0.28
+  - 0.42
+  - 0.38
+- command: prepare_open
+  when: media
+  template: attach.png
+  region:
+  - 0.395
+  - 0.4
+  - 0.46
+  - 0.52
+  file_picker: true
+- command: prepare_upload_image
+  when: media
+- command: prepare_visual_focus
+  text: Go ahead, put anything.
+  template: editor.png
+  region:
+  - 0.36
+  - 0.42
+  - 0.51
+  - 0.85
+- command: prepare_text
+- command: prepare_verify_text
+  select_all: 2
+- command: prepare_finish
+  region:
+  - 0.35
+  - 0.15
+  - 0.65
+  - 0.96
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+  ready_template: ready.png
+  ready_region:
+  - 0.56
+  - 0.6
+  - 0.64
+  - 0.98

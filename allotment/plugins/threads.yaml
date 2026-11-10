@@ -1,0 +1,77 @@
+id: threads
+name: Threads
+base_url: https://www.threads.com
+max_chars: 500
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Checks the owner profile and prepares text with one image. Post stays
+  manual.
+steps:
+- command: prepare_navigate
+  label: Open Threads owner profile
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  label: Check Threads owner
+  region:
+  - 0.335
+  - 0.21
+  - 0.44
+  - 0.24
+  owner_text: Edit profile
+  owner_region:
+  - 0.39
+  - 0.38
+  - 0.45
+  - 0.42
+  profile_url: '{{ profile_url }}'
+- command: prepare_visual_focus
+  label: Open the empty composer
+  text: What's new?
+  region:
+  - 0.36
+  - 0.48
+  - 0.45
+  - 0.52
+# Check the modal identity and heading after its opening transition. Keep this
+# separate from the profile check; the editor is automatically focused on open.
+- command: prepare_visual_identity
+  label: Check the new thread composer
+  region: [0.37, 0.47, 0.44, 0.50]
+  owner_text: New thread
+  owner_region: [0.46, 0.42, 0.54, 0.45]
+- command: prepare_visual_focus
+  label: Focus the draft editor
+  # Match the last word so the blinking caret is outside the checked pixels.
+  text: new?
+  region:
+  - 0.37
+  - 0.49
+  - 0.52
+  - 0.53
+- command: prepare_text
+  label: Paste sample text
+- command: prepare_verify_text
+  label: Check exact text
+- command: prepare_image
+  label: Attach sample image
+  when: media
+- command: prepare_finish
+  label: Check draft; leave Post manual
+  region:
+  - 0.33
+  - 0.16
+  - 0.66
+  - 0.92
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75

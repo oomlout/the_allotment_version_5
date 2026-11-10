@@ -1,0 +1,132 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+id: whatsapp
+name: WhatsApp groups
+base_url: https://web.whatsapp.com
+max_chars: 1024
+target_required: true
+target_kind: group
+target_label: Group
+target_path_pattern: /?
+target_no_query: true
+target_hint: Set the exact existing group title and https://web.whatsapp.com/. Search
+  results and the open header must pass a group-type check. Invite, channel and send-to
+  links are blocked.
+setup_note: Verifies your account and the exact group information before preparing
+  text and one image. Send remains manual.
+steps:
+- command: prepare_navigate
+  label: Open WhatsApp Web
+  url: '{{ target_url }}'
+  seconds: 3
+- command: prepare_open
+  label: Open own WhatsApp profile
+  template: account.png
+  region:
+  - 0.005
+  - 0.94
+  - 0.03
+  - 0.99
+- command: prepare_visual_identity
+  label: Check the signed-in WhatsApp identity
+  region:
+  - 0.04
+  - 0.095
+  - 0.25
+  - 0.13
+- command: prepare_open
+  label: Return to Chats
+  template: chats.png
+  region:
+  - 0.008
+  - 0.095
+  - 0.025
+  - 0.13
+- command: prepare_search_group
+  label: Search the exact group name
+  text: Search or start a new chat
+  region:
+  - 0.045
+  - 0.14
+  - 0.32
+  - 0.18
+  result_region:
+  - 0.07
+  - 0.25
+  - 0.32
+  - 0.6
+- command: prepare_visual_target
+  label: Verify group type, name and community
+  region:
+  - 0.366
+  - 0.09
+  - 0.55
+  - 0.115
+  details: true
+  detail_region:
+  - 0.76
+  - 0.29
+  - 0.92
+  - 0.333
+  kind_text: Group info
+  kind_region:
+  - 0.72
+  - 0.095
+  - 0.85
+  - 0.13
+  parent_region:
+  - 0.75
+  - 0.33
+  - 0.93
+  - 0.37
+- command: prepare_open
+  label: Close group information
+  template: close.png
+  region:
+  - 0.7
+  - 0.09
+  - 0.725
+  - 0.13
+- command: prepare_visual_focus
+  label: Focus the group draft
+  text: Type a message
+  region:
+  - 0.38
+  - 0.92
+  - 0.8
+  - 0.98
+- command: prepare_image
+  label: Attach sample image
+  when: media
+- command: prepare_visual_focus
+  label: Focus image caption
+  text: Type a message
+  region:
+  - 0.5
+  - 0.84
+  - 0.81
+  - 0.89
+  when: media
+- command: prepare_text
+  label: Paste fixed sample
+- command: prepare_verify_text
+  label: Check exact caption
+- command: prepare_finish
+  label: Check image and leave Send manual
+  region:
+  - 0.34
+  - 0.2
+  - 0.99
+  - 0.85
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: true

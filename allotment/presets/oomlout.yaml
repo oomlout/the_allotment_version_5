@@ -1,0 +1,88 @@
+schema_version: 1
+id: oomlout
+namespace: the_allotment
+user: oomlout_main
+destinations:
+  bluesky:
+    expected_account: oomlout.bsky.social
+    account_id: oomlout.bsky.social
+    profile_url: https://bsky.app/profile/oomlout.bsky.social
+  tumblr:
+    expected_account: oomlout
+    account_id: oomlout
+    profile_url: https://www.tumblr.com/oomlout
+  mastodon:
+    expected_account: oomlout
+    account_id: oomlout@mastodon.social
+    profile_url: https://mastodon.social/@oomlout
+  instagram:
+    expected_account: oomloutoomlout
+    account_id: oomloutoomlout
+    profile_url: https://www.instagram.com/oomloutoomlout/
+  threads:
+    expected_account: oomloutoomlout
+    account_id: oomloutoomlout
+    profile_url: https://www.threads.net/@oomloutoomlout
+    browser_profile_url: https://www.threads.com/@oomloutoomlout
+  twitter:
+    expected_account: oomlout
+    account_id: oomlout
+    profile_url: https://twitter.com/oomlout
+    browser_profile_url: https://x.com/oomlout
+  medium:
+    expected_account: oom lout
+    account_id: aaron.oomlout
+    profile_url: https://medium.com/@aaron.oomlout
+  facebook:
+    expected_account: oomlout
+    account_id: oomlout
+    profile_url: https://www.facebook.com/oomlout
+  facebook_business:
+    account_id: '61553257906517'
+    profile_url: https://www.facebook.com/profile.php?id=61553257906517
+    target_url: https://www.facebook.com/profile.php?id=61553257906517
+    target_name: ''
+    setup_note: Confirm the page title and the posting identity shown after switching
+      into this page. The numeric page ID is preserved separately.
+  makerworld:
+    expected_account: oomlout
+    account_id: oomlout
+    profile_url: https://makerworld.com/en/@oomlout
+  printables:
+    expected_account: oomlout_642239
+    account_id: oomlout_642239
+    profile_url: https://www.printables.com/@oomlout_642239/activity
+  pixelfed:
+    expected_account: oomlout
+    account_id: '784759347584444407'
+    profile_url: https://pixelfed.social/i/web/profile/784759347584444407
+    setup_note: Checks the handle and owner-only Edit Profile control.
+    browser_profile_url: https://pixelfed.social/oomlout
+  flickr:
+    expected_account: ooomlout
+    account_id: 93152031@N07
+    profile_url: https://www.flickr.com/photos/93152031@N07/
+    setup_note: Checks the owner photostream and Camera Roll control. Final Upload
+      stays manual.
+  whatsapp_channel:
+    account_id: 0029VbDuTPhLI8Yfa5aWQf2y
+    profile_url: https://whatsapp.com/channel/0029VbDuTPhLI8Yfa5aWQf2y
+    target_url: https://web.whatsapp.com/
+    target_name: ''
+    setup_note: Confirm your signed-in WhatsApp identity and the exact name of this
+      owned channel. Its public channel ID is preserved; it is not treated as a group
+      or an account login.
+  telegram_channel:
+    account_id: oomloutT
+    profile_url: http://t.me/oomloutT
+    target_name: oomlout
+    setup_note: Use the oomlout channel. Configure the signed-in posting account;
+      no group is configured.
+    target_url: https://web.telegram.org/k/#@oomloutT
+  patreon:
+    expected_account: oom lout
+    account_id: oomlout
+    profile_url: https://www.patreon.com/c/oomlout
+    publish_profile_link: false
+    content_kind: quip
+    keep_page_unpublished: true

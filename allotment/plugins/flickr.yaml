@@ -1,0 +1,68 @@
+id: flickr
+name: Flickr
+badge: F
+base_url: https://www.flickr.com
+max_chars: 5000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Prepares one image and its description. Review the title and click Upload
+  manually.
+steps:
+- command: prepare_navigate
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.15
+  - 0.3
+  - 0.25
+  - 0.38
+  owner_text: Camera Roll
+  owner_region:
+  - 0.47
+  - 0.42
+  - 0.53
+  - 0.46
+  profile_url: '{{ profile_url }}'
+- command: prepare_navigate
+  url: '{{ base_url }}/photos/upload/'
+  seconds: 4
+- command: prepare_open
+  text: Choose photos and videos to upload
+  region:
+  - 0.41
+  - 0.56
+  - 0.59
+  - 0.63
+  file_picker: true
+- command: prepare_upload_image
+- command: prepare_visual_focus
+  text: Add a description
+  region:
+  - 0.01
+  - 0.26
+  - 0.1
+  - 0.29
+- command: prepare_text
+- command: prepare_verify_text
+- command: prepare_preview_zoom
+  percent: 200
+- command: prepare_finish
+  region:
+  - 0
+  - 0.15
+  - 1
+  - 0.98
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+min_media: 1

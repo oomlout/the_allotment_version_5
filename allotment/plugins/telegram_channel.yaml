@@ -1,0 +1,98 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+id: telegram_channel
+name: Telegram channel
+base_url: https://web.telegram.org
+max_chars: 1024
+target_required: true
+target_kind: channel
+target_label: Channel
+target_path_pattern: /k/?
+target_fragment_pattern: '@[A-Za-z][A-Za-z0-9_]{3,31}'
+target_hint: Use the existing Telegram Web K channel URL and exact channel title.
+setup_note: User selected the oomlout channel. Check the signed-in account and subscribers
+  marker before calibration. Groups remain unconfigured.
+steps:
+- command: prepare_navigate
+  label: Open the configured Telegram channel
+  url: '{{ target_url }}'
+  seconds: 6
+- command: prepare_open
+  label: Open the Telegram account menu
+  template: account.png
+  region:
+  - 0.015
+  - 0.1
+  - 0.045
+  - 0.15
+- command: prepare_visual_identity
+  label: Check the signed-in Telegram account
+  region:
+  - 0.045
+  - 0.151
+  - 0.105
+  - 0.19
+- command: prepare_open
+  label: Close the account menu
+  template: account.png
+  region:
+  - 0.015
+  - 0.1
+  - 0.045
+  - 0.15
+- command: prepare_visual_target
+  label: Check the selected channel and subscribers marker
+  region:
+  - 0.443
+  - 0.1
+  - 0.55
+  - 0.125
+  kind_text: subscribers
+  kind_region:
+  - 0.443
+  - 0.119
+  - 0.55
+  - 0.14
+- command: prepare_visual_focus
+  label: Focus Broadcast without sending
+  text: Broadcast
+  region:
+  - 0.43
+  - 0.93
+  - 0.6
+  - 0.98
+- command: prepare_image
+  label: Attach the sample image
+  when: media
+- command: prepare_visual_focus
+  label: Focus the image caption
+  region:
+  - 0.25
+  - 0.2
+  - 0.8
+  - 0.95
+  when: media
+  template: editor.png
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Check the exact caption
+- command: prepare_finish
+  label: Check image and leave Send manual
+  region:
+  - 0.25
+  - 0.15
+  - 0.8
+  - 0.98
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: true

@@ -1,0 +1,66 @@
+id: makerworld
+name: MakerWorld
+badge: MW
+base_url: https://makerworld.com
+max_chars: 2000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Prepares a regular community post with one image. Final Post stays manual.
+steps:
+- command: prepare_navigate
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.155
+  - 0.39
+  - 0.215
+  - 0.42
+  owner_text: Creator Center
+  owner_region:
+  - 0.25
+  - 0.42
+  - 0.305
+  - 0.445
+  profile_url: '{{ profile_url }}'
+- command: prepare_navigate
+  url: '{{ base_url }}/en/community'
+  seconds: 4
+- command: prepare_visual_focus
+  text: What is happening?
+  region:
+  - 0.36
+  - 0.17
+  - 0.46
+  - 0.21
+- command: prepare_text
+- command: prepare_verify_text
+- command: prepare_open
+  text: Image
+  region:
+  - 0.355
+  - 0.21
+  - 0.385
+  - 0.65
+  file_picker: true
+- command: prepare_upload_image
+- command: prepare_preview_zoom
+  percent: 200
+- command: prepare_finish
+  region:
+  - 0
+  - 0.13
+  - 1
+  - 0.98
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75

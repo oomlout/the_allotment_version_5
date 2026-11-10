@@ -1,0 +1,65 @@
+id: medium
+name: Medium
+badge: M
+base_url: https://medium.com
+max_chars: 10000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Prepares an autosaved story draft; the first paragraph becomes its title.
+  Review formatting and publish manually.
+steps:
+- command: prepare_navigate
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.28
+  - 0.225
+  - 0.39
+  - 0.28
+  owner_text: Edit profile
+  owner_region:
+  - 0.73
+  - 0.38
+  - 0.79
+  - 0.41
+  profile_url: '{{ profile_url }}'
+- command: prepare_navigate
+  url: '{{ base_url }}/new-story'
+  seconds: 4
+- command: prepare_visual_focus
+  text: Title
+  region:
+  - 0.31
+  - 0.175
+  - 0.37
+  - 0.23
+- command: prepare_text
+- command: prepare_verify_text
+- command: prepare_image
+- command: prepare_finish
+  region:
+  - 0.28
+  - 0.18
+  - 0.74
+  - 0.95
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+  generated_draft_path: ^/p/[0-9a-f]{12}/edit$
+  generated_draft_wait: 12
+  ready_text: Draft
+  ready_region:
+  - 0.29
+  - 0.095
+  - 0.32
+  - 0.12

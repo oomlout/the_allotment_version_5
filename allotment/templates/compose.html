@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-heading"><h1>{{ 'New post' if is_new else 'Edit post' }}</h1><a class="button secondary" href="{{ url_for('garden',namespace=namespace,user=user,tab='drafts') }}">Drafts</a></div>
+<form method="post" action="{{ url_for('save',namespace=namespace,user=user) }}" enctype="multipart/form-data" class="creation-layout" id="post-form">
+<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="post_id" value="{{ post.id }}">
+<section class="panel composer"><label for="post-text">Post text</label><textarea name="text" id="post-text" class="post-input" placeholder="Post text" data-counter="char-count">{{ post.text }}</textarea>
+<div class="composer-tools"><label class="upload-button">{{ icon('image') }} Add media<input type="file" name="media" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" multiple data-files="file-summary"></label><span id="char-count">{{ post.text|length }} characters</span></div><div id="file-summary" class="file-summary" aria-live="polite"></div><div id="upload-previews" class="upload-previews"></div>
+<div id="post-media">{% include "post_media.html" %}</div>
+</section>
+<section id="inline-image-editor" hidden><div class="section-heading"><h2>Image crops</h2><button type="button" id="close-image-editor" class="button secondary">Close editor</button></div><iframe id="image-editor-frame" title="Image crop editor" src="about:blank"></iframe></section>
+<section class="panel post-links"><h2>Links</h2><input type="hidden" name="links_present" value="1"><label for="github-repo">GitHub repository</label><input type="url" name="github_repo" id="github-repo" value="{{ post.get('github_repo','') }}" placeholder="https://github.com/owner/repository">
+<div id="post-links">{% for link in post.get('links',[]) if link.get('kind')!='github' %}<div class="link-input-row"><label>Link {{ loop.index }}<input type="url" name="links" value="{{ link.url }}" placeholder="https://"></label><button type="button" class="button secondary" data-remove-link>Remove</button></div>{% endfor %}</div><button type="button" class="button secondary" id="add-link">Add link</button>{% include 'link_cards.html' %}</section>
+<section class="panel tag-picker" data-tag-save="{{ url_for('creation.tag_save',namespace=namespace,user=user) }}"><div class="section-heading"><h2>Tags</h2><a href="{{ url_for('creation.tag_browser',namespace=namespace,user=user) }}">Manage tags</a></div>
+<label for="tag-search">Find tags</label><input id="tag-search" type="search" placeholder="Search tags or groups" autocomplete="off">
+<div class="tag-options">{% for t in catalogue %}<label class="tag-choice" data-tag-name="{{ t.name }}" data-tag-group="{{ t.group }}"><input type="checkbox" name="tags" value="{{ t.id }}" {% if t.id in post.get('tags',[]) %}checked{% endif %}><span>{{ t.name }}</span><small>{{ t.group }}</small></label>{% endfor %}</div>
+<details><summary>Add a tag</summary><div class="form-grid"><label>Name<input id="new-tag-name" maxlength="80"></label><label>Group<input id="new-tag-group" value="Topics" maxlength="80" list="tag-groups"></label></div><datalist id="tag-groups">{% for group in catalogue|map(attribute='group')|unique %}<option value="{{ group }}">{% endfor %}</datalist><button type="button" class="button secondary" id="create-tag">Add tag</button><p id="tag-message" role="status"></p></details></section>
+
+<p id="creation-status" role="status"></p><div class="creation-actions"><button class="button primary" name="intent" value="save">Save draft</button><button class="button secondary" name="intent" value="images">Save & edit images</button><button class="button secondary" name="intent" value="publishing">Save & view post</button></div></form>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static',filename='creation.js') }}" defer></script>{% endblock %}

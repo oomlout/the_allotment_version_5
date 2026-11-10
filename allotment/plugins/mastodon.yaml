@@ -1,0 +1,76 @@
+id: mastodon
+name: Mastodon
+badge: M
+base_url: https://mastodon.social
+max_chars: 500
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Checks the owner profile, then prepares an unsent text/image draft. Publish
+  stays manual.
+steps:
+- command: prepare_navigate
+  label: Open Mastodon owner profile
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  label: Check the exact owner profile
+  region:
+  - 0.347
+  - 0.342
+  - 0.45
+  - 0.365
+  owner_text: Edit profile
+  owner_region:
+  - 0.57
+  - 0.315
+  - 0.625
+  - 0.35
+  profile_url: '{{ profile_url }}'
+- command: prepare_open
+  label: Open New Post
+  region:
+  - 0.18
+  - 0.34
+  - 0.245
+  - 0.39
+  template: create.png
+- command: prepare_visual_focus
+  label: Focus the empty composer frame
+  template: editor.png
+  region:
+  - 0.335
+  - 0.72
+  - 0.655
+  - 0.94
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Copy back and check text
+- command: prepare_image
+  label: Attach the sample image
+  when: media
+- command: prepare_finish
+  label: Check the draft and leave Publish manual
+  region:
+  - 0.335
+  - 0.3
+  - 0.655
+  - 0.98
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+  ready_region:
+  - 0.59
+  - 0.93
+  - 0.65
+  - 0.99
+  ready_template: ready.png

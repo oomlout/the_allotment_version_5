@@ -1,0 +1,30 @@
+schema_version: 1
+kind: harvest
+id: bluesky
+name: Bluesky harvest
+engine: oomlout_roboclick
+sending_enabled: false
+base_url: https://bsky.app
+profile_cards: '[data-testid^="feedItem-by-"]'
+thread_cards: '[data-testid^="postThreadItem-by-"]'
+exclude: 'a[title^="Post by "], [data-testid="quotePost"], blockquote'
+text: '[data-testid="postText"], [data-word-wrap="1"]'
+owner_selector: 'button[data-testid="profileHeaderEditProfileButton"]'
+owner_text: Edit profile
+profile_pages: 3
+max_pages: 30
+max_expansions: 20
+max_scrolls: 12
+expand_labels:
+- Show more replies
+reply_links: 'a[aria-label="Read more replies"]'
+counts:
+  likes: '[data-testid="likeCount-expanded"], [data-testid="likeBtn"]'
+  reposts: '[data-testid="repostCount-expanded"]'
+  quotes: '[data-testid="quoteCount-expanded"]'
+  replies: '[data-testid="replyBtn"]'
+  saves: '[data-testid="bookmarkCount-expanded"]'
+  views: '[data-testid="viewCount-expanded"], [data-testid="viewCount"]'
+  interactions: '[data-testid="interactionCount"]'
+# Selectors based on bluesky-social/social-app source; live calibration required.
+# No arbitrary clicks, key sequences, script execution, or submission actions.

@@ -1,0 +1,75 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: preparation_only_not_live_verified
+max_media: 1
+media_types:
+- image
+id: telegram
+name: Telegram groups
+base_url: https://web.telegram.org
+max_chars: 1024
+target_required: true
+target_kind: group
+target_label: Group
+target_path_pattern: /k/?
+target_fragment_pattern: -[0-9]+
+target_hint: Use the existing group URL from Telegram Web K with a numeric negative
+  chat fragment and its exact title. The public t.me address is not a group destination.
+setup_note: Preparation only. Confirm the signed-in account selector and group member-count
+  marker from a captured page before preparing a draft.
+steps:
+- command: prepare_navigate
+  label: Open the configured Telegram group
+  url: '{{ target_url }}'
+  seconds: 3
+- command: prepare_identity
+  label: Check the signed-in Telegram account
+  selector: .sidebar-left-section [class*="profile"]
+- command: prepare_target
+  label: Check the exact group title and member marker
+  selector: .chat-info .peer-title
+  kind_selector: .chat-info .chat-subtitle
+  kind_pattern: (?i)\b[\d,]+\s+members\b
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: .input-message-input[contenteditable="true"]
+  text: Message
+  region:
+  - 0.2
+  - 0.5
+  - 1
+  - 0.99
+- command: prepare_image
+  label: Paste an image into the draft
+  when: media
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: .popup-send-media .input-field-input[contenteditable="true"]
+  text: Add a caption
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  when: media
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Check the draft caption
+- command: prepare_finish
+  label: Check the draft and stop without sending
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: false

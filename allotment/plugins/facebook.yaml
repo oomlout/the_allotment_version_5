@@ -1,0 +1,22 @@
+id: facebook
+name: Facebook profile
+badge: f
+base_url: https://www.facebook.com
+max_chars: 5000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: false
+inspection_only: true
+verification: inspection_only
+max_media: 1
+media_types:
+- image
+setup_note: Select the correct posting identity before calibration. The oomlout address
+  currently shows visitor controls.
+steps:
+- command: prepare_navigate
+  label: Inspect Facebook profile
+  url: '{{ profile_url }}'
+  seconds: 4

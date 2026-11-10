@@ -1,0 +1,69 @@
+id: pixelfed
+name: Pixelfed
+badge: Px
+base_url: https://pixelfed.social
+max_chars: 2000
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+preparation_ready: true
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+setup_note: Checks owner profile and prepares an image/caption draft. Final submission
+  stays manual.
+steps:
+- command: prepare_navigate
+  url: '{{ profile_url }}'
+  seconds: 4
+- command: prepare_visual_identity
+  region:
+  - 0.195
+  - 0.325
+  - 0.24
+  - 0.345
+  owner_text: Edit Profile
+  owner_region:
+  - 0.19
+  - 0.43
+  - 0.24
+  - 0.455
+  profile_url: '{{ profile_url }}'
+- command: prepare_navigate
+  url: '{{ base_url }}/i/web/compose'
+  seconds: 3
+- command: prepare_open
+  text: New Post
+  region:
+  - 0.467
+  - 0.255
+  - 0.52
+  - 0.283
+  file_picker: true
+- command: prepare_upload_image
+- command: prepare_visual_focus
+  text: Write a caption...
+  region:
+  - 0.4
+  - 0.22
+  - 0.55
+  - 0.255
+- command: prepare_text
+- command: prepare_verify_text
+- command: prepare_preview_zoom
+  percent: 200
+  label: Enlarge the draft for image verification
+- command: prepare_finish
+  region:
+  - 0
+  - 0.1
+  - 1
+  - 0.98
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+min_media: 1

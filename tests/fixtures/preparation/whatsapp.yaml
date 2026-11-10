@@ -1,0 +1,91 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: preparation_only_not_live_verified
+max_media: 1
+media_types:
+- image
+id: whatsapp
+name: WhatsApp groups
+base_url: https://web.whatsapp.com
+max_chars: 1024
+target_required: true
+target_kind: group
+target_label: Group
+target_path_pattern: /?
+target_no_query: true
+target_hint: Set the exact existing group title and https://web.whatsapp.com/. Search
+  results and the open header must pass a group-type check. Invite, channel and send-to
+  links are blocked.
+setup_note: Preparation only. Account and group markers are provisional. Missing markers
+  stop the run; it never falls back to a contact or the first result.
+steps:
+- command: prepare_navigate
+  label: Open WhatsApp Web
+  url: '{{ target_url }}'
+  seconds: 3
+- command: prepare_identity
+  label: Check the signed-in WhatsApp account
+  selector: '[data-testid="profile-drawer"]'
+- command: prepare_search_target
+  label: Find one exact existing group
+  selector: '#side [contenteditable="true"][role="textbox"]'
+  text: Search or start new chat
+  results_selector: '#pane-side [role="row"]'
+  name_selector: '[title]'
+  kind_selector: '[data-icon="default-group"]'
+  kind_attribute: data-icon
+  kind_pattern: ^default-group$
+  region:
+  - 0
+  - 0.08
+  - 0.4
+  - 0.9
+- command: prepare_target
+  label: Check the exact group header and type
+  selector: '#main header [title]'
+  kind_selector: '#main header [data-icon="default-group"]'
+  kind_attribute: data-icon
+  kind_pattern: ^default-group$
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: '#main footer [contenteditable="true"][role="textbox"]'
+  text: Type a message
+  region:
+  - 0.2
+  - 0.5
+  - 1
+  - 0.99
+- command: prepare_image
+  label: Paste an image into the draft
+  when: media
+- command: prepare_focus
+  label: Focus the draft editor
+  selector: '[role="dialog"] [contenteditable="true"]'
+  text: Add a caption
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  when: media
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Check the draft caption
+- command: prepare_finish
+  label: Check the draft and stop without sending
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: true
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: false

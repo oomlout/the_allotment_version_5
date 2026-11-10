@@ -1,0 +1,67 @@
+schema_version: 2
+engine: oomlout_roboclick_prepare
+sending_enabled: false
+editable: false
+verification: checked_draft_required
+max_media: 1
+media_types:
+- image
+id: twitter
+name: Twitter / X
+base_url: https://x.com
+handle_pattern: '[A-Za-z0-9_]{1,15}'
+max_chars: 280
+setup_note: Opens a fresh X tab, verifies the owner profile, prepares text and one
+  image, and leaves Post for you. Review and approval remain separate.
+steps:
+- command: prepare_navigate
+  label: Open the account profile
+  url: '{{ base_url }}/{{ handle }}'
+  seconds: 3
+- command: prepare_visual_identity
+  label: Verify owner profile and exact handle
+  profile_url: '{{ base_url }}/{{ handle }}'
+  region:
+  - 0.31
+  - 0.42
+  - 0.4
+  - 0.45
+  owner_text: Edit profile
+  owner_region:
+  - 0.55
+  - 0.32
+  - 0.62
+  - 0.38
+- command: prepare_navigate
+  label: Open a draft composer
+  url: '{{ base_url }}/compose/post'
+  seconds: 2
+- command: prepare_visual_focus
+  label: Focus the draft editor
+  text: What’s happening?
+  region:
+  - 0.3
+  - 0.14
+  - 0.67
+  - 0.5
+- command: prepare_text
+  label: Paste the fixed sample
+- command: prepare_verify_text
+  label: Copy back and check the draft text
+- command: prepare_image
+  label: Paste the fixed sample image
+  when: media
+- command: prepare_finish
+  label: Check the draft and stop without sending
+  region:
+  - 0.2
+  - 0.08
+  - 0.85
+  - 0.95
+  panel: false
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+preparation_ready: true

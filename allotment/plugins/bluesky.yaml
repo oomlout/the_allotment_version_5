@@ -1,0 +1,83 @@
+schema_version: 2
+engine: oomlout_roboclick
+sending_enabled: false
+id: bluesky
+name: Bluesky
+base_url: https://bsky.app
+editable: false
+verification: checked_draft_and_explicit_approval
+max_chars: 300
+max_media: 1
+media_types:
+- image
+steps:
+- command: desktop_navigate
+  label: Open your Bluesky profile
+  url: '{{ profile_url }}'
+  seconds: 3
+- command: desktop_check_owner
+  label: Check signed-in profile owner
+  profile_url: '{{ profile_url }}'
+  expected_account: '{{ expected_account }}'
+  owner_text: Edit profile
+  region:
+  - 0.15
+  - 0.07
+  - 0.85
+  - 0.65
+  owner_selector: button[data-testid="profileHeaderEditProfileButton"]
+- command: desktop_click_text
+  label: Open New post
+  text: New post
+  region:
+  - 0
+  - 0.07
+  - 1
+  - 0.9
+- command: desktop_click_text
+  label: Focus the post editor
+  text: What's up
+  region:
+  - 0.25
+  - 0.08
+  - 0.75
+  - 0.55
+  panel: true
+- command: desktop_paste_text
+  label: Paste post text
+  text: '{{ text }}'
+- command: desktop_capture_text
+  label: Check editor text
+  name: composer
+  contains:
+  - '{{ text }}'
+- command: desktop_paste_image
+  label: Paste the queued image
+  image: '{{ image }}'
+  when: media
+- command: desktop_find_image
+  label: Check image preview
+  image: '{{ image }}'
+  region:
+  - 0.2
+  - 0.15
+  - 0.8
+  - 0.92
+  threshold: 0.82
+  when: media
+  reference_region:
+  - 0.25
+  - 0.25
+  - 0.75
+  - 0.75
+  panel: true
+- command: desktop_ready
+  label: Leave draft ready for your Post click
+  text: Post
+  region:
+  - 0.25
+  - 0.07
+  - 0.8
+  - 0.5
+  exact: true
+  panel: true
