@@ -31,6 +31,8 @@ def enqueue(store,namespace,user,post_id,actions,custom=None):
         post=store.published(namespace,user,post_id)
         if not post or (store.draft_dir(namespace,user,post_id)/'post.yaml').exists():raise ValueError('Publish the local post or its edits before sowing.')
         states=store.destination_states(namespace,user,post_id);accounts=store.settings(namespace,user).get('destinations',{})
+        from .translations import versions_for,preparation_text
+        versions=versions_for(store,namespace,user,post)
         for action in actions:
             state=states.get(action,{})
             if blocks_retry(action,state,SOW_BUILTINS):
@@ -38,8 +40,12 @@ def enqueue(store,namespace,user,post_id,actions,custom=None):
             if action not in SOW_BUILTINS:
                 from .preparation_approval import require_approval,approval_status
                 recipe=plugins[action];account=accounts.get(action,{})
+                translated=versions.get(action)
+                if translated and translated['editorial_status']!='draft':raise ValueError(f"{recipe['name']}: review the held translation or choose Use original.")
+                prepared_post={**post,'text':preparation_text(action,translated)} if translated else post
+                if len(prepared_post['text'])>recipe.get('max_chars',100000):raise ValueError(f"{recipe['name']}: translated text exceeds the current recipe limit.")
                 try:
-                    require_approval(store,namespace,user,recipe,account,post)
+                    require_approval(store,namespace,user,recipe,account,prepared_post)
                 except ValueError:
                     status=approval_status(store,namespace,user,recipe,account)
                     if not status['valid']:
@@ -64,6 +70,9 @@ def enqueue(store,namespace,user,post_id,actions,custom=None):
             for index,attachment in enumerate(snapshot['attachments']):
                 if attachment['type']=='image' and framing!='original' and framing not in attachment.get('variants',{}):snapshot=generate_variants(folder,snapshot,index)
             payload=deepcopy(snapshot);payload['path']=relative
+            if action in versions:
+                payload['text']=preparation_text(action,versions[action])
+                payload['translation']=deepcopy(versions[action])
             for attachment in payload['attachments']:
                 attachment['original_file']=attachment['file']
                 attachment['display_variant']=framing

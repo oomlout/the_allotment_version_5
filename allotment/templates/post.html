@@ -14,6 +14,9 @@
 
 <section class="panel"><h2>Local publication</h2><form method="post" action="{{ url_for('local_publication',namespace=namespace,user=user,post_id=post.id,action='publish' if post.status=='draft' or not published else 'unpublish') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button {{ 'primary' if post.status=='draft' or not published else 'secondary' }}">{{ 'Publish edits locally' if published and post.status=='draft' else 'Publish locally' if not published else 'Unpublish locally' }}</button></form></section></div><div>
 
+{% if translation is defined %}{% include 'translation_panel.html' %}{% endif %}
+{% if platform_text is defined %}{% include 'platform_text_panel.html' %}{% endif %}
+{% if platform_text is defined %}{% include 'platform_preview_panel.html' %}{% endif %}
 {% include 'sow_panel.html' %}
 {% include 'inspect_panel.html' %}
 
@@ -33,5 +36,5 @@
 
 {% endblock %}
 
-{% block scripts %}<script src="{{ url_for('static',filename='post.js') }}" defer></script>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static',filename='post.js') }}" defer></script><script src="{{ url_for('static',filename='platform-preview.js') }}" defer></script>{% endblock %}
 

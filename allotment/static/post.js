@@ -3,13 +3,21 @@
   const form=root.querySelector('[data-sow-launch]'), launch=root.querySelector('[data-launch]');
   const rows=[...root.querySelectorAll('[data-destination]')], controls=root.querySelector('[data-job-control]');
   const progressPanel=document.getElementById('job-run'),inspectPanel=document.getElementById('inspect-panel');
+  const translationPanel=document.getElementById('translation-panel'),translationForm=translationPanel?.querySelector('[data-translation-launch]'),translateButton=translationPanel?.querySelector('[data-translate]');
   let displayedRun='';
   const active=['queued','countdown','paused','running'];
-  let run=null,destinations=[],timer,flight=null,revision=0,starting=false,controlPending=false;
+  let run=null,destinations=[],timer,flight=null,revision=0,starting=false,translating=false,controlPending=false;
   const pending=new Set(),errors=new Map();
   const harvestButtons=[...document.querySelectorAll('.harvest-form button')];
   harvestButtons.forEach(button=>{button.dataset.caption=button.textContent;button.dataset.initialDisabled=String(button.disabled);});
   const field=(node,name)=>node.querySelector(`[data-${name}]`);
+  const selectAll=field(root,'select-all-active');
+  const activeBoxes=()=>[...form.querySelectorAll('[name="actions"]:not(:disabled)')].filter(box=>box.value!=='git');
+  for(const name of ['run-wait','run-deadline']){
+    if(field(progressPanel,name))continue;
+    const node=document.createElement('p');node.setAttribute(`data-${name}`,'');node.hidden=true;
+    progressPanel.insertBefore(node,controls);
+  }
   // A running Studio can serve a cached template alongside newer static files.
   // Restore additive controls before rendering an older page.
   let setupLink=field(root,'platform-setup');
@@ -31,10 +39,17 @@
   const message=(node,value)=>{text(node,value||'');node.hidden=!value;if(node.classList.contains('action-error'))node.title=value||'';};
   const busy=()=>starting||active.includes(run?.status);
   function selection(){
+    if(selectAll){
+      const boxes=activeBoxes(),selected=boxes.filter(box=>box.checked).length;
+      selectAll.disabled=busy()||!boxes.length;
+      selectAll.checked=!!boxes.length&&selected===boxes.length;
+      selectAll.indeterminate=selected>0&&selected<boxes.length;
+    }
     const count=form.querySelectorAll('[name="actions"]:checked:not(:disabled)').length;
     launch.disabled=busy()||pending.size>0||root.dataset.published!=='true';
     text(launch,starting?'Starting…':'Launch');
     text(field(root,'selection-status'),busy()?'Launch in progress':count?`${count} selected`:'Website and summary only');
+    if(translateButton){translateButton.disabled=busy();text(translateButton,starting&&translating?'Starting…':'Generate versions');}
   }
   function render(){
     const working=busy();
@@ -58,20 +73,21 @@
       const error=field(row,'destination-error');text(error,errors.get(data.id)||data.error||'');error.title=error.textContent;
       error.hidden=needsTest;
       const link=field(row,'destination-link');link.hidden=!data.url;if(data.url)link.href=data.url;
-      field(row,'review').hidden=!data.reviewable;
+      field(row,'review').hidden=false;
       row.querySelectorAll('[data-verdict]').forEach(button=>{
-        button.hidden=button.dataset.verdict==='unsuccessful'&&data.verdict==='successful';
-        button.disabled=working||pending.has(data.id);
+        button.hidden=false;
+        button.disabled=working||pending.has(data.id)||!data.reviewable;
         button.setAttribute('aria-pressed',String(button.dataset.verdict===data.verdict));
-        button.title=working?'Review after the launch finishes':button.dataset.verdict==='successful'?(data.verdict==='successful'?'Posted — confirmed by you':'Mark as posted'):'Reset for another attempt';
+        button.title=working?'Review after the launch finishes':button.dataset.verdict==='successful'?(data.verdict==='successful'?'Posted — click to clear':'Mark as posted'):'Reset for another attempt';
       });
     }
     const panel=progressPanel;panel.hidden=!run&&!starting;
-    const progressHost=run?.kind==='harvest'?inspectPanel?.querySelector('[data-inspect-progress]'):field(root,'sow-progress');
+    const progressHost=run?.kind==='translation'?translationPanel?.querySelector('[data-translation-progress]'):run?.kind==='harvest'?inspectPanel?.querySelector('[data-inspect-progress]'):field(root,'sow-progress');
     if(progressHost&&panel.parentElement!==progressHost)progressHost.append(panel);
     if(run&&run.id!==displayedRun){
       displayedRun=run.id;
-      if(run.kind==='harvest'&&inspectPanel)inspectPanel.open=true;
+      if(run.kind==='translation'&&translationPanel&&active.includes(run.status))translationPanel.open=true;
+      else if(run.kind==='harvest'&&inspectPanel)inspectPanel.open=true;
       else if(working&&root.matches('details'))root.open=true;
     }
     let label=starting?'Starting launch…':({queued:'Starting',countdown:'Countdown',paused:'Paused',running:run?.operation||'Working',complete:'Complete',failed:'Finished with errors',stopped:'Stopped'}[run?.status]||'');
@@ -81,8 +97,10 @@
     const done=selected.filter(d=>!['pending','running','submitting',''].includes(d.status)).length;
     const name=rows.find(r=>r.dataset.destination===run?.platform)?.dataset.name;
     const step=run?.total_steps&&working?`Step ${run.step} of ${run.total_steps}`:'';
-    message(field(panel,'run-detail'),run?.kind==='harvest'?`Bluesky · ${run.mode==='ids'?'Capture post ID':'Inspect reactions'} · Read-only`:run?[`${done} / ${selected.length} destinations finished`,working?name:'',step].filter(Boolean).join(' · '):'');
-    const bar=field(panel,'run-progress');bar.hidden=!selected.length||run?.kind==='harvest';bar.max=selected.length||1;bar.value=done;
+    const translationStep=working&&run?.step_index?`Step ${run.step_index} of ${run.total_steps}`:'';
+    const translationItem=working&&run?.item_total?`${run.item_label||'Item'} ${run.item_index} of ${run.item_total}`:'';
+    message(field(panel,'run-detail'),run?.kind==='translation'?(working?['ChatGPT',translationStep,translationItem,run.detail].filter(Boolean).join(' · '):''):run?.kind==='harvest'?`Bluesky · ${run.mode==='ids'?'Capture post ID':'Inspect reactions'} · Read-only`:run?[`${done} / ${selected.length} destinations finished`,working?name:'',step].filter(Boolean).join(' · '):'');
+    const bar=field(panel,'run-progress');bar.hidden=!selected.length||['harvest','translation'].includes(run?.kind);bar.max=selected.length||1;bar.value=done;
     message(document.getElementById('job-run-error'),run?.error);
     field(panel,'handoff').hidden=!working;
     text(field(panel,'handoff'),run?.phase==='handoff'?'Click the Chrome window you want to use. Automation starts when this countdown ends.':'Keep Chrome visible. Release mouse and keyboard after the countdown. F8 stops.');
@@ -98,7 +116,24 @@
     const seconds=run?.countdown_until?Math.max(0,Math.ceil((Date.parse(run.countdown_until)-Date.now())/1000)):run?.remaining;
     text(node,run?.phase==='handoff'||run?.status==='countdown'?` ${seconds||0}s`:run?.status==='paused'?` ${run.remaining||0}s remaining`:'');
     if(run?.phase==='handoff')text(launch,`Choose Chrome · ${seconds||0}s`);
+    if(translateButton&&run?.kind==='translation'&&run?.phase==='handoff')text(translateButton,`Choose Chrome · ${seconds||0}s`);
     harvestButtons.forEach(button=>text(button,run?.kind==='harvest'&&run?.phase==='handoff'&&button.form.elements.mode.value===run.mode?`Choose Chrome · ${seconds||0}s`:button.dataset.caption));
+    const translationActive=run?.kind==='translation'&&active.includes(run?.status);
+    const duration=seconds=>{const n=Math.max(0,Math.ceil(seconds));return n>=60?`${Math.floor(n/60)}m ${n%60}s`:`${n}s`;};
+    const remaining=until=>Math.max(0,(Date.parse(until)-Date.now())/1000);
+    let waiting='';
+    if(translationActive){
+      if(run.status==='paused')waiting=`Paused by you. ${duration(run.remaining||0)} of the starting countdown remains. Click Resume to continue.`;
+      else if(run.phase==='handoff')waiting=`${duration(seconds||0)} to choose the Chrome window. Click the window to use.`;
+      else if(run.status==='countdown')waiting=`Starting in ${duration(seconds||0)}. Finish selecting Chrome, then release the mouse and keyboard.`;
+      else if(run.wait_until){
+        const left=remaining(run.wait_until);
+        waiting=`${run.wait_reason||'Allowing the page to settle'} · ${left>0?(run.wait_kind==='poll'?'Next check in ':'Continuing in ')+duration(left):'Continuing…'}`;
+      }
+    }
+    message(field(progressPanel,'run-wait'),waiting);
+    const deadline=translationActive&&run.status==='running'&&run.poll_until?`${run.poll_reason||'Waiting for the result'} · ${duration(remaining(run.poll_until))} until timeout · Check ${run.poll_attempt||1}`:'';
+    message(field(progressPanel,'run-deadline'),deadline);
   }
   async function request(url,options={}){
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
@@ -124,13 +159,23 @@
         const data=await request(root.dataset.statusUrl);if(version!==revision)return;
         const finished=active.includes(run?.status)&&data.run&&!active.includes(data.run.status);
         run=data.run;destinations=data.destinations||[];render();
-        if(finished){if(run.kind==='harvest'){location.reload();return;}void refreshHistory(run.id);}
+        if(finished){if(['harvest','translation'].includes(run.kind)){location.reload();return;}void refreshHistory(run.id);}
       }
       catch(error){message(field(root,'sow-error'),error.message);}
       finally{flight=null;timer=setTimeout(poll,busy()?800:5000);}
     })();return flight;
   }
+  selectAll?.addEventListener('change',()=>{for(const box of activeBoxes())box.checked=selectAll.checked;selection();});
   form.addEventListener('change',selection);
+  translationForm?.addEventListener('submit',async event=>{
+    event.preventDefault();if(busy())return;
+    const errorNode=field(translationPanel,'translation-error');starting=true;translating=true;revision++;message(errorNode,'');render();
+    try{
+      const data=await request(translationForm.action,{method:'POST',body:new FormData(translationForm)});revision++;
+      run={id:data.id,kind:'translation',status:'queued',destinations:[]};
+    }catch(error){message(errorNode,error.message);}
+    finally{starting=false;translating=false;render();void poll();}
+  });
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(launch.disabled)return;
     const payload=new FormData(form);starting=true;revision++;message(field(root,'sow-error'),'');setupLink.hidden=true;render();
@@ -152,7 +197,7 @@
   });
   for(const row of rows)for(const button of row.querySelectorAll('[data-verdict]'))button.addEventListener('click',async()=>{
     const id=row.dataset.destination;if(busy()||pending.has(id))return;
-    const url=row.dataset.reviewUrl, verdict=button.dataset.verdict;if(!url)return;
+    const url=row.dataset.reviewUrl, verdict=button.dataset.verdict==='successful'&&row.dataset.verdict==='successful'?'':button.dataset.verdict;if(!url)return;
     pending.add(id);errors.delete(id);revision++;render();
     try{
       const data=await request(url,{method:'POST',body:new URLSearchParams({csrf:root.dataset.csrf,verdict})});
@@ -161,7 +206,7 @@
       const destination=destinations.find(d=>d.id===id);if(destination){
         destination.verdict=verdict;destination.label=verdict==='successful'?'Posted — confirmed by you':'Ready to select again';destination.blocked=false;
         destination.error='';
-        if(verdict==='unsuccessful'){destination.reviewable=false;row.querySelector('[name="actions"]').checked=false;}
+        if(verdict!=='successful')row.querySelector('[name="actions"]').checked=false;
       }
       void refreshHistory(run?.id);
     }catch(error){revision++;errors.set(id,error.message);}

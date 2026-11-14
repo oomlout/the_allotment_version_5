@@ -300,13 +300,19 @@ class Store:
                         return 7 if verdict == 'successful' else 0 if verdict == 'unsuccessful' else rank.get(value['status'], 0)
                     if action not in result or (job.get('kind')!='sow' and result[action].get('job_kind')!='sow' and action not in BUILTINS and priority(receipt) > priority(result[action])):
                         result[action] = {**receipt, "revision": job["revision"], "job_id": job["id"], 'job_kind':job.get('kind')}
+        from .sow_review import path_for
+        for path in path_for(self, namespace, user, post_id, 'manual', 'placeholder').parent.glob('*.yaml'):
+            review = read_yaml(path)
+            action = path.stem
+            if action not in result:
+                result[action] = {'status':'', 'job_id':'manual', 'review':review}
         return result
 
     def plugins(self):
         result = {}
         for path in [*sorted(self.plugins_dir.glob("*.yaml")), *sorted((self.local / "plugins").glob("*.yaml"))]:
             data = read_yaml(path)
-            if data.get('kind')=='harvest':continue
+            if data.get('kind') in {'harvest','translation'}:continue
             result[slug(data["id"])] = data
         return result
 

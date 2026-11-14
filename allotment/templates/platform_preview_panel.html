@@ -1,0 +1,21 @@
+<details class="panel" id="platform-preview-panel">
+<summary><h2>Platform preview</h2></summary>
+<label class="preview-image-toggle"><input type="checkbox" data-preview-images autocomplete="off"> Show image</label>
+{% for id,platform in translation_destinations.items() %}
+{% set value=platform_text.entries.get(id,{}) if platform_text.checked else {} %}
+{% set frame=post.get('sowing_overrides',{}).get(id,{}).get('framing') or framing.get(id,'original') %}
+<article class="platform-preview" data-platform-preview="{{ id }}">
+<h3><span class="platform-logo sow-logo" aria-hidden="true" style="--platform-logo:url('{{ url_for('static',filename='platform-logos/'+id+'.svg') }}')"></span> {{ platform.name }}</h3>
+<strong data-preview-title {% if not value.get('title') %}hidden{% endif %}>{{ value.get('title') or '' }}</strong>
+<p class="translation-message" data-preview-text>{{ value.get('message',post.text) }}</p>
+<p data-preview-tags {% if not value.get('tags') %}hidden{% endif %}>{{ value.get('tags',[])|join(', ') }}</p>
+<div class="platform-preview-images" hidden>
+{% for a in post.attachments if a.type=='image' %}
+{% set file=a.get('variants',{}).get(frame,{}).get('file',a.file) %}
+<img loading="lazy" src="{{ asset_url(namespace,user,post,{'file':file}) }}" alt="{{ a.alt or 'Post image' }}">
+{% endfor %}
+</div>
+</article>
+{% endfor %}
+<template data-preview-original>{{ post.text }}</template>
+</details>

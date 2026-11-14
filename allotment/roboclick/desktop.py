@@ -321,6 +321,12 @@ class Desktop:
         allowed here. Page input resumes after focus AND bounds stay stable.
         """
         started=time.monotonic();deadline=started+timeout
+        previous=getattr(self,'_snap_handoff',None)
+        self._snap_handoff=None  # One transition only; never reusable by page input.
+        inherited_shell=(direction=='up' and previous is not None
+                         and previous['hwnd']==self.hwnd and previous['pid']==self.pid
+                         and 0<=started-previous['settled']<.5)
+        cross_snap_return=False
         stable_since=None;last_bounds=None;last_state=None
         dismissed=False;caption_clicked=False;last_dismissal=-10;last_dismissed_foreground=None;dismissals=0
         shell_seen=False;recovery_for_dismissal=None
@@ -340,7 +346,7 @@ class Desktop:
                 process_name=self.psutil.Process(pid).name().casefold()
                 window_class=self.wg.GetClassName(foreground)
             state=(foreground,process_name,window_class)
-            nonlocal last_state,shell_seen
+            nonlocal last_state,shell_seen,cross_snap_return
             if state!=last_state:
                 self.log("snap-focus",{"direction":direction,"foreground":foreground,
                          "process":process_name,"class":window_class})
@@ -348,10 +354,22 @@ class Desktop:
             if process_name=='explorer.exe' and window_class in {'ForegroundStaging','XamlExplorerHostIslandWindow','MultitaskingViewFrame'}:
                 shell_seen=True
             if foreground and foreground!=self.hwnd and (process_name!='explorer.exe' or window_class=='CabinetWClass'):
+                # Win+Up can restore another Chrome window before its own shell
+                # overlay receives focus. Carry only the immediately preceding
+                # verified Snap Assist handoff, never a general focus exception.
+                if (inherited_shell and time.monotonic()-started<.5
+                        and process_name=='chrome.exe' and pid==self.pid
+                        and window_class=='Chrome_WidgetWin_1'
+                        and self.snap_position_matches(direction)):
+                    cross_snap_return=True
                 # Escape from observed Snap Assist can restore the prior app.
                 # Permit only reactivation of reserved Chrome during this one-
                 # second handoff; no input is ever sent to the returned app.
-                if not (shell_seen and dismissals and time.monotonic()-last_dismissal<1):
+                if not ((shell_seen and dismissals and time.monotonic()-last_dismissal<1)
+                        or (cross_snap_return and time.monotonic()-started<1
+                            and process_name=='chrome.exe' and pid==self.pid
+                            and window_class=='Chrome_WidgetWin_1'
+                            and self.snap_position_matches(direction))):
                     raise DesktopStopped("Another app took focus while snapping Chrome. Keep Chrome focused and restart the test.")
             return foreground
         while time.monotonic()<deadline:
@@ -401,6 +419,8 @@ class Desktop:
                     last_bounds=bounds;stable_since=stamp
                 if stamp-stable_since>=stable_seconds:
                     self.guard()
+                    if direction=='left' and shell_seen:
+                        self._snap_handoff={'hwnd':self.hwnd,'pid':self.pid,'settled':time.monotonic()}
                     self.log("snap-settled",{"direction":direction,"elapsed":round(stamp-started,3),"bounds":bounds})
                     return
             else:stable_since=None
@@ -411,7 +431,6 @@ class Desktop:
         """Use Windows Snap, then verify its handoff before further keyboard input."""
         for direction in ("left", "up"):
             self.hotkey(keys=["win", direction])
-            self.settle_snap(direction)
         width, height = self.gui.size()
         left, top, right, bottom = self.bounds()
         if left > 20 or top > 20 or right > width * .6 or bottom > height * .65:
@@ -594,6 +613,10 @@ class Desktop:
         if debug or not keys or (not snap and any(str(key).casefold() in {"win","winleft","winright","f12"} for key in keys)):
             raise ValueError("Unsupported keyboard shortcut.")
         self.input(self.gui.hotkey,*keys)
+        if snap:
+            # Recovery belongs to the keyboard action itself: desktop_begin,
+            # Translate and direct desktop_hotkey callers all get the same guard.
+            self.settle_snap(keys[1])
 
     def copy(self, keys=("ctrl","c")):
         marker = "ALLOTMENT-CLIPBOARD-"+uuid.uuid4().hex
@@ -669,6 +692,8 @@ class Desktop:
 
     def capture_text(self, name="page", contains=None):
         self.hotkey(keys=["ctrl","a"])
+        self.wait(.5)
+        self.screenshot(name=name+'-selection')
         value = self.copy()
         self.hotkey(keys=["right"])
         path = self.evidence / f"{self.sequence:03d}-{self.safe_name(name)}.txt"
@@ -696,14 +721,65 @@ class Desktop:
             self.wait(.05)
         raise ValueError("Chrome did not finish copying rendered HTML.")
 
-    def capture_page(self, name="page"):
+    def focus_page_margin(self, region, button='right'):
+        """Focus a freshly checked blank margin without activating a control."""
+        if button not in {'left','right'}:
+            raise ValueError('Page margin focus supports only left or right click.')
+        import numpy as np
+        from PIL import Image
+        shot=self.screenshot(name='page-focus-margin',region=region)
+        with Image.open(shot['path']) as source:
+            pixels=np.array(source.convert('RGB'))
+        candidates=[]
+        for y in range(8,pixels.shape[0]-31,24):
+            for x in range(8,pixels.shape[1]-31,24):
+                patch=pixels[y:y+24,x:x+24]
+                candidates.append((float(patch.var(axis=(0,1)).mean()),x,y))
+        if not candidates:
+            raise ValueError('No page margin is available for document focus.')
+        variance,x,y=min(candidates)
+        if variance>5:
+            raise ValueError('No blank page margin found. Update the configured focus region.')
+        left,top=shot['box'][0]+x,shot['box'][1]+y
+        match={'x':left+12,'y':top+12,'box':[left,top,left+24,top+24],
+               'time':shot['time'],'screen_box':shot['box'],'screenshot':shot['path']}
+        # Right click + Escape focuses the document without following links,
+        # pressing buttons or relying on the composer's changing tab order.
+        self.click_match(match,button=button)
+        self.log('page-margin-focus',{'button':button,'target':[match['x'],match['y']],
+                                     'pointer':list(self.gui.position())})
+        if button=='right':self.hotkey(keys=['esc'])
+        self.wait(2)
+
+    def capture_page(self, name="page", focus_text=None, focus_region=None, focus_margin=None, focus_margin_button='right', focus_retries=0):
         """Copy rendered page text and CF_HTML through ordinary keyboard input.
 
         This captures the rendered DOM, links and image URLs without source view,
         browser APIs, extensions, download settings, or Save As dialogs.
         """
+        if focus_text and focus_margin is not None:
+            raise ValueError('Choose either a text anchor or a page margin for capture.')
         self.check_url(url=self.url)
-        self.capture_text(name=name)
+        # Some apps keep Ctrl+A/C inside an empty editor or toolbar button.
+        # A recipe may name visible non-interactive page text to focus AFTER
+        # the omnibox check. Never rely on tab order or an old coordinate.
+        if focus_text:
+            self.click_text(text=focus_text,region=focus_region,exact=True)
+            self.wait(2)
+        elif focus_margin is not None:
+            self.focus_page_margin(focus_margin,button=focus_margin_button)
+        retries=max(0,min(int(focus_retries),4))
+        for attempt in range(retries+1):
+            try:
+                self.capture_text(name=name)
+                break
+            except ValueError as error:
+                if attempt==retries or not str(error).startswith('Keyboard copy returned no fresh text.'):
+                    raise
+                # Move focus only; do not activate the toolbar control or
+                # restore the editor by re-reading the omnibox between tries.
+                self.hotkey(keys=['shift','tab'])
+                self.wait(.2)
         self.guard()
         raw = self.clipboard_html()
         if isinstance(raw,str):

@@ -30,17 +30,28 @@ def blocks_retry(action, receipt, builtins):
 
 
 def save_review(store, namespace, user, post_id, job_id, action, verdict):
-    if verdict not in {'successful', 'unsuccessful'}:
+    if verdict not in {'successful', 'unsuccessful', ''}:
         raise ValueError('Choose successful or not successful.')
     from .job_runs import runs_for, ACTIVE
     if any(r['status'] in ACTIVE for r in runs_for(store, namespace, user, post_id)):
         raise ValueError('Review after the launch finishes.')
     path = path_for(store, namespace, user, post_id, job_id, action)
-    with lock(path.with_suffix('.lock')):
-        job = read_yaml(store.job_path(namespace, user, job_id))
-        receipt = job.get('actions', {}).get(action, {})
-        if job.get('post', {}).get('id') != post_id or not reviewable(receipt):
-            raise ValueError('Only an attempted or exported destination can be reviewed.')
+    with store.garden_lock(namespace, user), lock(path.with_suffix('.lock')):
+        if job_id == 'manual':
+            from .lifecycle import post_folder
+            from .sowing import selectable_destinations
+            post_folder(store, namespace, user, post_id)
+            if action not in selectable_destinations(store):
+                raise ValueError('Choose an available sowing destination.')
+            state = store.destination_states(namespace, user, post_id).get(action, {})
+            if state.get('job_id') not in {None, '', 'manual'}:
+                raise ValueError('The destination changed. Reload before reviewing it.')
+            receipt = {'status':''}
+        else:
+            job = read_yaml(store.job_path(namespace, user, job_id))
+            receipt = job.get('actions', {}).get(action, {})
+            if job.get('post', {}).get('id') != post_id or not reviewable(receipt):
+                raise ValueError('Only an attempted or exported destination can be reviewed.')
         record = {'verdict':verdict, 'reviewed_at':now(), 'job_id':job_id, 'platform':action,
                   'post_id':post_id, 'worker_status':receipt['status']}
         write_yaml(path, record)
@@ -54,5 +65,5 @@ def destination_view(action, state):
               'succeeded':'Completed', 'failed':'Failed', 'uncertain':'Interrupted — check Chrome', 'cancelled':'Not started', 'exported':'Exported — outcome not recorded'}
     return {'id':action, 'job_id':state.get('job_id',''), 'status':status, 'verdict':verdict,
             'label':{'successful':'Posted — confirmed by you', 'unsuccessful':'Ready to select again'}.get(verdict, labels.get(status,'Not attempted')),
-            'error':'' if verdict else state.get('error',''), 'url':state.get('url',''),
-            'reviewable':verdict!='unsuccessful' and reviewable(state)}
+            'error':'' if state.get('review') else state.get('error',''), 'url':state.get('url',''),
+            'reviewable':not status or reviewable(state)}

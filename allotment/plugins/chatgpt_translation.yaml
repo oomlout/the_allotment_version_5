@@ -1,0 +1,208 @@
+# All browser steps and wait reasons are configured here. No hidden translation actions.
+schema_version: 2
+kind: translation
+id: chatgpt_translation
+name: ChatGPT platform translation
+engine: oomlout_roboclick
+url: https://chatgpt.com/
+steps:
+- command: desktop_check_url
+  label: Checking the new ChatGPT tab
+  url:
+    ref: url
+- command: desktop_wait
+  seconds: 2
+  label: Letting ChatGPT settle
+  detail: Waiting for the new page and composer to finish loading
+- command: data_read_text
+  path:
+    ref: prompt_file
+  save_as: prompt
+  label: Reading the saved instructions
+- command: data_text_chunks
+  text:
+    ref: prompt
+  size: 2500
+  save_as: chunks
+  label: Preparing the prompt
+- command: desktop_find_text_any
+  label: Finding the empty ChatGPT composer
+  texts:
+  - Ask anything
+  - Ask ChatGPT
+  - Message ChatGPT
+  region:
+  - 0.05
+  - 0.15
+  - 0.95
+  - 0.95
+  timeout: 1
+  exact: true
+  save_as: composer
+- command: desktop_click_match
+  match:
+    ref: composer
+  label: Focusing the empty composer
+- for_each:
+    ref: images
+  as: image
+  steps:
+  - command: data_image_crop
+    image:
+      ref: image
+    aspect_ratio: 1
+    save_as: thumbnail_crop
+    label: Preparing the image preview check
+  - command: desktop_paste_image
+    label: Attaching the image
+    image:
+      ref: image
+  - command: desktop_find_image
+    label: Checking the image preview
+    image:
+      ref: image
+    region:
+    - 0.25
+    - 0.1
+    - 0.95
+    - 0.95
+    threshold: 0.82
+    reference_region:
+      ref: thumbnail_crop
+    allow_multiple: true
+  label: Image
+- for_each:
+    ref: chunks
+  as: chunk
+  steps:
+  - command: desktop_paste_text
+    label: Entering the translation prompt
+    text:
+      ref: chunk
+  - command: desktop_wait
+    seconds: 0.5
+    label: Letting the pasted text settle
+    detail: Allowing the composer to process this prompt chunk
+  label: Prompt chunk
+- command: desktop_capture_text
+  label: Reading back the complete prompt
+  name: ai-prompt-check
+  save_as: prompt_copy
+- command: data_assert_equal
+  label: Verifying the complete prompt
+  actual:
+    ref: prompt_copy
+  expected:
+    ref: prompt
+  normalize_whitespace: true
+- command: desktop_check_url
+  label: Rechecking ChatGPT
+  url:
+    ref: url
+- command: desktop_capture_text
+  label: Rechecking composer focus
+  name: ai-focus-check
+  save_as: focus_copy
+- command: data_assert_equal
+  actual:
+    ref: focus_copy
+  expected:
+    ref: prompt
+  normalize_whitespace: true
+  label: Checking the captured text
+- command: desktop_hotkey
+  label: Submitting the translation prompt to ChatGPT
+  keys:
+  - enter
+- command: desktop_wait
+  seconds: 0.7
+  label: Waiting for submission feedback
+  detail: Allowing ChatGPT to react to the submitted prompt
+- command: desktop_screenshot
+  name: ai-submission
+  label: Saving the current screen
+- command: desktop_wait
+  seconds: 5
+  label: Waiting for ChatGPT to start
+  detail: Giving ChatGPT time to create the conversation and begin responding
+- poll:
+    timeout: 30
+    interval: 2
+    reason: Waiting for ChatGPT to open the new conversation
+  steps:
+  - command: desktop_read_url
+    label: Confirming ChatGPT received the prompt
+    save_as: conversation_url
+  - command: data_url_assert
+    url:
+      ref: conversation_url
+    origin:
+      ref: url
+    path_prefix: /c/
+    pending_paths:
+    - ''
+    - /
+    label: Verifying the conversation address
+  label: Waiting for the conversation to open
+- command: desktop_hotkey
+  keys:
+  - tab
+  label: Moving focus outside the composer
+- poll:
+    timeout: 900
+    interval: 5
+    stable_on: response_text
+    observations: 2
+    reason: ChatGPT is generating the platform drafts
+  steps:
+  - command: desktop_read_url
+    label: Waiting for tagged platform versions
+    save_as: conversation_url
+  - command: data_url_assert
+    url:
+      ref: conversation_url
+    origin:
+      ref: url
+    path_prefix: /c/
+    label: Verifying the conversation address
+  - command: desktop_capture_page
+    name: ai-response
+    save_as: page_file
+    label: Reading the ChatGPT response
+  - command: data_read_text
+    path:
+      ref: page_file
+    save_as: page_html
+    label: Reading the captured response
+  - command: data_html_absent
+    html:
+      ref: page_html
+    selector: button[data-testid="stop-button"]
+    label: Checking whether ChatGPT has finished
+  - command: data_html_extract
+    html:
+      ref: page_html
+    selector: '[data-message-author-role="assistant"], [data-markdown-text-style="assistant-message"]'
+    contains:
+    - ref: begin_tag
+    - ref: end_tag
+    save_as: response_text
+    label: Locating the tagged response
+  - command: data_text_between
+    text:
+      ref: response_text
+    start:
+      ref: begin_tag
+    end:
+      ref: end_tag
+    save_as: response_json
+    label: Extracting the result JSON
+  - command: data_json_parse
+    text:
+      ref: response_json
+    save_as: result
+    label: Checking the result JSON
+  label: Waiting for platform drafts
+- command: desktop_screenshot
+  label: Platform versions captured
+  name: translation-captured

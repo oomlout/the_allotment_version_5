@@ -177,6 +177,22 @@ def create_app(root=None, testing=False, garden=None):
                                post_count=len(store.posts(namespace, user)), draft_count=len(store.drafts(namespace, user)),
                                catalogue=catalogue(store,namespace,user)['tags'],query=query,selected_tag=selected_tag)
 
+    @app.get('/g/<namespace>/<user>/inspect/')
+    def inspect_profiles(namespace,user):
+        from .sowing import selectable_destinations
+        accounts=store.settings(namespace,user).get('destinations',{})
+        social=store.profile(namespace,user).get('social',{})
+        profiles=[]
+        for platform,recipe in selectable_destinations(store).items():
+            if platform in SOW_BUILTINS:continue
+            account=accounts.get(platform,{})
+            address=next((value for value in (account.get('browser_profile_url'),account.get('profile_url'),
+                account.get('target_url'),social.get(platform))
+                if isinstance(value,str) and urlparse(value).scheme in {'http','https'} and urlparse(value).netloc),None)
+            if address:profiles.append({'id':platform,'name':recipe['name'],'url':address})
+        return render_template('inspect_profiles.html',**context(namespace,user,'inspect'),
+                               profiles=sorted(profiles,key=lambda profile:profile['name'].casefold()))
+
     def sow_testing(namespace,user,platform,recipe,accounts):
         needs_test=platform not in SOW_BUILTINS and not approval_status(store,namespace,user,recipe,accounts.get(platform,{}))['valid']
         return {'needs_test':needs_test,'test_url':url_for('destinations',namespace=namespace,user=user,_anchor='destination-'+platform) if needs_test else ''}
@@ -255,7 +271,11 @@ def create_app(root=None, testing=False, garden=None):
         runs=runs_for(store,namespace,user,post_id)
         from .framing import defaults,CHOICES
         from .harvest import overview
+        from .translations import overview as translation_overview,catalog as translation_catalog
+        from .platform_text import view as platform_text_view
         return render_template('post.html',**data,jobs=jobs,plugins=store.plugins(),framing=defaults(store,namespace,user),framing_choices=CHOICES,
+            translation=translation_overview(store,namespace,user,post_id),translation_destinations=translation_catalog(store),
+            platform_text=platform_text_view(store,namespace,user,post_id),
             harvest=overview(store,namespace,user,post_id),
             published=store.published(namespace,user,post_id),current_run=next((r for r in runs if r['status'] in {'queued','countdown','paused','running'}),runs[0] if runs else None))
 
@@ -276,6 +296,9 @@ def create_app(root=None, testing=False, garden=None):
         post_folder(store,namespace,user,post_id)
         runs=runs_for(store,namespace,user,post_id)
         run=next((r for r in runs if r['status'] in {'queued','countdown','paused','running'}),runs[0] if runs else None)
+        if run and run.get('kind')=='translation' and run.get('status') in {'queued','countdown','paused','running'}:
+            from .roboclick.desktop import handoff_progress
+            run={**run,**handoff_progress(job_run_folder(store,namespace,user,run['id'])/'evidence')}
         states=store.destination_states(namespace,user,post_id)
         values=[]
         plugins=store.plugins();accounts=store.settings(namespace,user).get('destinations',{})
@@ -284,10 +307,10 @@ def create_app(root=None, testing=False, garden=None):
             view=destination_view(action,state)
             view['blocked']=blocks_retry(action,state,SOW_BUILTINS)
             view.update(sow_testing(namespace,user,action,plugins.get(action,{}),accounts))
-            view['review_url']=url_for('sow_review',namespace=namespace,user=user,post_id=post_id,job_id=view['job_id'],action=action) if view['job_id'] else ''
+            view['review_url']=url_for('sow_review',namespace=namespace,user=user,post_id=post_id,job_id=view['job_id'] or 'manual',action=action)
             values.append(view)
         if run:
-            run={k:run.get(k) for k in ('id','kind','mode','status','phase','platform','operation','step','total_steps','remaining','countdown_until','error','destinations')}
+            run={k:run.get(k) for k in ('id','kind','mode','status','phase','platform','operation','step','total_steps','remaining','countdown_until','error','destinations','step_index','item_index','item_total','item_label','detail','wait_until','wait_seconds','wait_reason','wait_kind','poll_until','poll_timeout','poll_attempt','poll_reason')}
             run['control_url']=url_for('job_run_control',namespace=namespace,user=user,run_id=run['id'])
         return jsonify(run=run,destinations=values)
 
@@ -333,6 +356,57 @@ def create_app(root=None, testing=False, garden=None):
             job_manager.start_harvest(namespace,user,post_id,request.form.get('platform','bluesky'),request.form.get('mode','ids'),
                 request.form.get('url','').strip(),request.form.get('test')=='1')
         return redirect(url_for('post_page',namespace=namespace,user=user,post_id=post_id))
+
+    @app.post('/g/<namespace>/<user>/p/<post_id>/translate')
+    def translate_post(namespace,user,post_id):
+        from .translations import start
+        with run_start_guard:
+            if batches.active():raise ValueError('A test sequence is active. Wait or stop it first.')
+            ensure_desktop_free()
+            run_id=start(store,namespace,user,post_id,request.form.getlist('destinations'),request.form.get('context',''))
+        if request.accept_mimetypes.best=='application/json':return jsonify(id=run_id)
+        return redirect(url_for('post_page',namespace=namespace,user=user,post_id=post_id,_anchor='translation-panel'))
+
+    @app.post('/g/<namespace>/<user>/p/<post_id>/translations/select')
+    def select_translation(namespace,user,post_id):
+        from .translations import review
+        review(store,namespace,user,post_id,request.form.get('run_id',''))
+        return redirect(url_for('post_page',namespace=namespace,user=user,post_id=post_id,_anchor='translation-panel'))
+
+    @app.get('/g/<namespace>/<user>/p/<post_id>/translations/<run_id>.json')
+    def translation_download(namespace,user,post_id,run_id):
+        from .translations import load_result
+        load_result(store,namespace,user,post_id,run_id)
+        return send_file(job_run_folder(store,namespace,user,run_id)/'result.json',as_attachment=True,download_name=post_id+'-platforms.json',mimetype='application/json')
+
+    @app.get('/g/<namespace>/<user>/translation-guide.md')
+    def translation_guide(namespace,user):
+        from .translations import GUIDE
+        return send_file(GUIDE,as_attachment=True,download_name='platform_translation.md',mimetype='text/markdown')
+
+    @app.post('/g/<namespace>/<user>/p/<post_id>/platform-text')
+    def save_platform_text(namespace,user,post_id):
+        from .platform_text import save
+        save(store,namespace,user,post_id,request.form)
+        flash('Platform text saved for Sow.','success')
+        return redirect(url_for('post_page',namespace=namespace,user=user,post_id=post_id,_anchor='platform-text-panel'))
+
+    @app.post('/g/<namespace>/<user>/p/<post_id>/platform-text/import')
+    def import_platform_text(namespace,user,post_id):
+        from .platform_text import import_pack,MAX_IMPORT
+        upload=request.files.get('pack');pasted=request.form.get('pack_json','').strip()
+        if upload and upload.filename and pasted:raise ValueError('Choose a JSON file or paste JSON, not both.')
+        raw=upload.read(MAX_IMPORT+1) if upload and upload.filename else pasted
+        count=import_pack(store,namespace,user,post_id,raw)
+        flash(f'Loaded {count} platform versions. Review and save them for Sow.','success')
+        return redirect(url_for('post_page',namespace=namespace,user=user,post_id=post_id,_anchor='platform-text-panel'))
+
+    @app.get('/g/<namespace>/<user>/p/<post_id>/platform-text.json')
+    def export_platform_text(namespace,user,post_id):
+        from .platform_text import export_pack
+        response=jsonify(export_pack(store,namespace,user,post_id))
+        response.headers['Content-Disposition']=f'attachment; filename="{slug(post_id)}-platforms.json"'
+        return response
 
     @app.post('/g/<namespace>/<user>/harvest/<run_id>/approve')
     def approve_harvest(namespace,user,run_id):

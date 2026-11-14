@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-heading"><h1>Inspect</h1></div>
+<div class="inspect-profiles">
+{% for item in profiles %}
+<a class="panel inspect-profile" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+<span class="platform-logo sow-logo" aria-hidden="true" style="--platform-logo:url('{{ url_for('static',filename='platform-logos/'+item.id+'.svg') }}')"></span>
+<span class="inspect-profile-text"><strong>{{ item.name }}</strong><span class="full-address">{{ item.url }}</span></span>
+{{ icon('external') }}
+</a>
+{% else %}<p>No profile links configured. <a href="{{ url_for('destinations',namespace=namespace,user=user) }}">Configure destinations</a></p>{% endfor %}
+</div>
+{% endblock %}

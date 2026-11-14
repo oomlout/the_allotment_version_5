@@ -39,7 +39,7 @@ def progress_for(folder):
     if progress.get('status') in ACTIVE:
         from .roboclick.desktop import handoff_progress
         run=read_yaml(folder/'run.yaml')
-        evidence=folder/'evidence' if run.get('kind')=='harvest' else folder.parents[3]/'evidence'/run.get('job_id','')/progress.get('platform','')
+        evidence=folder/'evidence' if run.get('kind') in {'harvest','translation'} else folder.parents[3]/'evidence'/run.get('job_id','')/progress.get('platform','')
         progress={**progress,**handoff_progress(evidence)}
     return progress
 

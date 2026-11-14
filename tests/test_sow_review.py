@@ -17,6 +17,28 @@ def attempted(store):
     return post,job
 
 
+def test_manual_outcome_before_attempt_can_be_cleared_without_approval(store,monkeypatch):
+    post=store.save_draft(NS,USER,'Manual outcome')
+    app,client,csrf=client_for(store)
+    base=f'/g/{NS}/{USER}/p/{post["id"]}'
+    row=next(d for d in client.get(base+'/sow/status').json['destinations'] if d['id']=='bluesky')
+    assert row['reviewable'] and row['needs_test'] and '/manual/' in row['review_url']
+    for verdict in ('successful','','unsuccessful','successful'):
+        response=client.post(row['review_url'],data={'csrf':csrf,'verdict':verdict},headers={'Accept':'application/json'})
+        assert response.status_code==200 and response.json['review']['verdict']==verdict
+        assert Store(store.root).destination_states(NS,USER,post['id'])['bluesky']['review']['verdict']==verdict
+        current=next(d for d in client.get(base+'/sow/status').json['destinations'] if d['id']=='bluesky')
+        assert current['reviewable'] and current['needs_test']
+    assert store.jobs(NS,USER)==[]
+    publish_local(store,NS,USER,post['id'])
+    with pytest.raises(ValueError):enqueue(store,NS,USER,post['id'],['bluesky'])
+    monkeypatch.setattr('allotment.preparation_approval.require_approval',lambda *args:None)
+    job=enqueue(store,NS,USER,post['id'],['bluesky'])
+    state=store.destination_states(NS,USER,post['id'])['bluesky']
+    assert state['job_id']==job['id'] and 'review' not in state
+    assert client.post(row['review_url'],data={'csrf':csrf,'verdict':'successful'}).status_code==400
+
+
 def test_review_survives_new_store_and_app_without_changing_worker_evidence(store):
     post,job=attempted(store);app,client,csrf=client_for(store)
     url=f'/g/{NS}/{USER}/p/{post["id"]}/sow/{job["id"]}/twitter/review'

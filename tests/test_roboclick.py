@@ -274,3 +274,66 @@ def test_image_clipboard_lock_retries_without_replaying_input(tmp_path,monkeypat
         with pytest.raises((ValueError,OSError,DesktopStopped)):d.paste_image(str(path))
         d.clip.EmptyClipboard.assert_not_called();d.clip.SetClipboardData.assert_not_called()
         d.clip.CloseClipboard.assert_not_called();d.hotkey.assert_not_called()
+
+
+def test_page_capture_focus_anchor_runs_after_url_check(tmp_path):
+    session=object.__new__(Desktop)
+    session.url='https://chatgpt.com/';session.evidence=tmp_path
+    events=[]
+    session.check_url=lambda **kw:events.append('url')
+    session.click_text=lambda **kw:events.append(('focus',kw))
+    session.capture_text=lambda **kw:events.append('copy')
+    session.guard=MagicMock();session.log=MagicMock();session.wait=MagicMock()
+    session.clipboard_html=lambda:clipboard_html(session.url)
+    session.capture_page(focus_text='Good to see you',focus_region=[.25,.2,.95,.75])
+    assert events==['url',('focus',{'text':'Good to see you','region':[.25,.2,.95,.75],'exact':True}),'copy']
+    session.click_text=MagicMock(side_effect=ValueError('Missing or ambiguous anchor'))
+    session.capture_text=MagicMock()
+    with pytest.raises(ValueError,match='anchor'):session.capture_page(focus_text='Good to see you')
+    session.capture_text.assert_not_called()
+
+
+def test_page_capture_focuses_margin_after_url_check(tmp_path):
+    session=object.__new__(Desktop)
+    session.url='https://chatgpt.com/';session.evidence=tmp_path
+    events=[]
+    session.check_url=lambda **kw:events.append('url')
+    session.focus_page_margin=lambda region,button:events.append(('margin',region))
+    session.capture_text=lambda **kw:events.append('copy')
+    session.guard=MagicMock();session.log=MagicMock()
+    session.clipboard_html=lambda:clipboard_html(session.url)
+    session.capture_page(focus_margin=[.26,.18,.38,.85])
+    assert events==['url',('margin',[.26,.18,.38,.85]),'copy']
+
+
+@pytest.mark.parametrize('blank',[True,False])
+def test_page_margin_requires_blank_pixels_and_never_left_clicks(tmp_path,blank):
+    from PIL import Image
+    import numpy as np
+    data=np.full((100,100,3),240,dtype=np.uint8)
+    if not blank:data[::2]=0
+    path=tmp_path/'margin.png';Image.fromarray(data).save(path)
+    session=object.__new__(Desktop)
+    session.screenshot=MagicMock(return_value={'path':str(path),'box':[200,150,300,250],'time':123})
+    session.click_match=MagicMock();session.hotkey=MagicMock();session.wait=MagicMock();session.log=MagicMock();session.gui=SimpleNamespace(position=lambda:(20,20))
+    if blank:
+        session.focus_page_margin([.26,.18,.38,.85])
+        call=session.click_match.call_args
+        assert call.kwargs=={'button':'right'}
+        assert call.args[0]['screenshot']==str(path)
+        assert call.args[0]['box']==[208,158,232,182]
+        session.hotkey.assert_called_once_with(keys=['esc'])
+    else:
+        with pytest.raises(ValueError,match='No blank page margin'):session.focus_page_margin([.26,.18,.38,.85])
+        session.click_match.assert_not_called();session.hotkey.assert_not_called()
+
+
+def test_left_margin_focus_does_not_open_context_menu(tmp_path):
+    from PIL import Image
+    path=tmp_path/'blank.png';Image.new('RGB',(100,100),'white').save(path)
+    session=object.__new__(Desktop)
+    session.screenshot=MagicMock(return_value={'path':str(path),'box':[0,0,100,100],'time':1})
+    session.click_match=MagicMock();session.hotkey=MagicMock();session.wait=MagicMock();session.log=MagicMock();session.gui=SimpleNamespace(position=lambda:(20,20))
+    session.focus_page_margin([.2,.2,.4,.8],button='left')
+    assert session.click_match.call_args.kwargs=={'button':'left'}
+    session.hotkey.assert_not_called()

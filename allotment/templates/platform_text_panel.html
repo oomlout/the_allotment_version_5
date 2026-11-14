@@ -1,0 +1,29 @@
+<details class="panel post-platform-text" id="platform-text-panel" {% if platform_text.checked or platform_text.saved %}open{% endif %}>
+<summary><h2>Platform text</h2></summary>
+<div class="translation-review-actions"><button class="button primary" type="submit" form="platform-text-editor">Save platform text</button>{% if platform_text.enabled %}<a class="button secondary" href="{{ url_for('export_platform_text',namespace=namespace,user=user,post_id=post.id) }}">Download saved JSON</a>{% endif %}</div>
+{% if platform_text.pending %}<p>Loaded for review. Save platform text to use it in Sow.</p>{% elif platform_text.enabled %}<p>Saved versions are used by Sow. Unchecked platforms use the original.</p>{% else %}<p>Unchecked platforms use the original post.</p>{% endif %}
+{% if platform_text.stale %}<p class="action-error">The source changed. Review the platform text before saving it again.</p>{% endif %}
+<details class="platform-import"><summary>Load JSON</summary>
+<form method="post" enctype="multipart/form-data" action="{{ url_for('import_platform_text',namespace=namespace,user=user,post_id=post.id) }}">
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<label>JSON file<input type="file" name="pack" accept=".json,application/json"></label>
+<details><summary>Paste JSON</summary><label>JSON content<textarea name="pack_json" rows="5" spellcheck="false"></textarea></label></details>
+<button class="button secondary" type="submit">Load JSON</button>
+<p class="translation-note">Pipeline schema 2.0. Replaces the loaded versions; omitted platforms use the original. Nothing is posted.</p>
+</form></details>
+<form method="post" action="{{ url_for('save_platform_text',namespace=namespace,user=user,post_id=post.id) }}" data-platform-text-form id="platform-text-editor">
+<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="source_revision" value="{{ platform_text.revision }}">
+{% for id,platform in translation_destinations.items() %}{% set value=platform_text.entries.get(id,{}) %}
+<details class="platform-copy" data-platform-copy="{{ id }}"><summary><span class="platform-logo sow-logo" aria-hidden="true" style="--platform-logo:url('{{ url_for('static',filename='platform-logos/'+id+'.svg') }}')"></span> {{ platform.name }}{% if platform_text.checked and value %} · Custom{% endif %}</summary>
+<label class="platform-use"><input type="checkbox" name="platforms" value="{{ id }}" {% if platform_text.checked and value %}checked{% endif %}> Use this version for {{ platform.name }}</label>
+{% if id in ['medium','flickr'] %}<label>Title for {{ platform.name }}<input type="text" name="title_{{ id }}" value="{{ value.get('title') or '' }}"></label>{% endif %}
+<label for="platform-message-{{ id }}">Text for {{ platform.name }}</label><textarea id="platform-message-{{ id }}" name="message_{{ id }}" rows="5" maxlength="{{ platform.get('max_chars',10000) }}">{{ value.get('message',post.text) }}</textarea>
+<p class="translation-note">Limit: {{ platform.get('max_chars',10000) }} characters{% if id=='medium' %}, including title{% endif %}.</p>
+{% if id in ['flickr','tumblr'] %}<label>Tags for {{ platform.name }}<input name="tags_{{ id }}" value="{{ value.get('tags',[])|join(', ') }}" placeholder="tag_one, tag_two"></label>{% endif %}
+<label>Readiness for {{ platform.name }}<select name="status_{{ id }}">{% for status in platform_text.statuses %}<option value="{{ status }}" {% if value.get('editorial_status','draft')==status %}selected{% endif %}>{{ {'draft':'Ready for preparation','needs_context':'Needs context','hold_quip_unavailable':'Quip unavailable','hold_preparation_unavailable':'Preparation unavailable'}[status] }}</option>{% endfor %}</select></label>
+{% if value.get('strategy') %}<details><summary>Editorial note</summary><p>{{ value.strategy }}</p></details>{% endif %}
+</details>{% endfor %}
+<p class="translation-note">Platform tests still apply. Native titles, tags and alt text need manual entry where a recipe does not support them.</p>
+</form>
+{% if platform_text.enabled or platform_text.pending %}<form method="post" action="{{ url_for('select_translation',namespace=namespace,user=user,post_id=post.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button secondary">Use original for all platforms</button></form>{% endif %}
+</details>

@@ -72,6 +72,12 @@ def main():
             print(f"The Allotment Studio: http://127.0.0.1:{port}")
             create_app(store.root,garden=args.garden).run(host="127.0.0.1", port=port, debug=False)
         elif args.command == 'run-job':
+            from .storage import read_yaml
+            from .job_runs import folder_for
+            if read_yaml(folder_for(store,args.namespace,args.user,args.run_id)/'run.yaml').get('kind')=='translation':
+                from .translations import execute
+                result=execute(store,args.namespace,args.user,args.run_id)
+                return 0 if result['status']=='complete' else 1
             from .job_runs import execute_run
             execute_run(store,args.namespace,args.user,args.run_id)
         elif args.command == "worker":

@@ -13,9 +13,9 @@ def desktop(monkeypatch,foreground,bounds=None):
     session.check_stop=MagicMock();session.last_input=lambda:tick[0];session.guard=MagicMock();session.log=MagicMock()
     process=lambda pid:SimpleNamespace(create_time=lambda:123,name=lambda:{11:'chrome.exe',22:'explorer.exe',33:'notepad.exe'}[pid])
     session.psutil=SimpleNamespace(Process=process)
-    session.wp=SimpleNamespace(GetWindowThreadProcessId=lambda hwnd:(1,{1:11,2:22,3:33,4:22}[hwnd]))
+    session.wp=SimpleNamespace(GetWindowThreadProcessId=lambda hwnd:(1,{1:11,2:22,3:33,4:22,5:11}[hwnd]))
     session.wg=SimpleNamespace(IsWindow=lambda hwnd:True,GetForegroundWindow=lambda:foreground(clock[0]),
-        GetClassName=lambda hwnd:'CabinetWClass' if hwnd==4 else 'MultitaskingViewFrame',
+        GetClassName=lambda hwnd:'Chrome_WidgetWin_1' if hwnd==5 else 'CabinetWClass' if hwnd==4 else 'MultitaskingViewFrame',
         GetWindowRect=lambda hwnd:bounds(clock[0]) if bounds else (0,0,960,540),SetForegroundWindow=MagicMock())
     session.gui=SimpleNamespace(press=MagicMock(side_effect=lambda key:tick.__setitem__(0,tick[0]+1)))
     return session,clock,tick
@@ -201,3 +201,46 @@ def test_recovery_position_requires_visible_reserved_snap(monkeypatch,rect,visib
     session.wg.IsIconic=lambda hwnd:iconic
     session.gui.size=lambda:(1920,1080)
     assert session.snap_position_matches(direction)==expected
+
+
+def test_up_recovers_same_process_chrome_only_after_verified_left_shell(monkeypatch):
+    focused=[False]
+    session,clock,tick=desktop(monkeypatch,lambda t:1 if focused[0] else 5)
+    session._snap_handoff={'hwnd':1,'pid':11,'settled':0}
+    def activate(hwnd):
+        assert hwnd==1
+        session.gui.press.assert_not_called()  # Never send Escape to the other tab.
+        focused[0]=True
+    session.wg.SetForegroundWindow.side_effect=activate
+    session.settle_snap('up')
+    session.wg.SetForegroundWindow.assert_called_once_with(1)
+    session.guard.assert_called_once()
+    assert session._snap_handoff is None
+
+
+@pytest.mark.parametrize('case',['missing','expired','wrong_window','wrong_bounds','input','other_app'])
+def test_cross_snap_recovery_is_narrow(monkeypatch,case):
+    session,clock,tick=desktop(monkeypatch,lambda t:3 if case=='other_app' else 5)
+    session._snap_handoff={'hwnd':99 if case=='wrong_window' else 1,'pid':11,'settled':-1 if case=='expired' else 0}
+    if case=='missing':session._snap_handoff=None
+    if case=='wrong_bounds':session.snap_position_matches.return_value=False
+    if case=='input':session.last_input=lambda:999
+    with pytest.raises(DesktopStopped):session.settle_snap('up')
+    session.wg.SetForegroundWindow.assert_not_called()
+    session.gui.press.assert_not_called()
+
+
+def test_left_shell_handoff_survives_only_until_next_snap(monkeypatch):
+    session,clock,tick=desktop(monkeypatch,lambda t:2 if t<.1 else 1)
+    session.settle_snap('left')
+    assert session._snap_handoff=={'hwnd':1,'pid':11,'settled':clock[0]}
+
+
+@pytest.mark.parametrize('keys,direction',[(['win','left'],'left'),(['win','up'],'up'),(['ctrl','t'],None)])
+def test_keyboard_action_always_settles_snap(monkeypatch,keys,direction):
+    session,clock,tick=desktop(monkeypatch,lambda t:1)
+    session.input=MagicMock();session.gui.hotkey=MagicMock();session.settle_snap=MagicMock()
+    session.hotkey(keys)
+    session.input.assert_called_once_with(session.gui.hotkey,*keys)
+    if direction:session.settle_snap.assert_called_once_with(direction)
+    else:session.settle_snap.assert_not_called()
