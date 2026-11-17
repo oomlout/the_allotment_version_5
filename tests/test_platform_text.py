@@ -46,7 +46,7 @@ def test_import_edit_save_restart_and_sow_uses_independent_text(store,monkeypatc
     assert store.published(NS,USER,post['id'])['text']==post['text']
 
 
-@pytest.mark.parametrize('mutation',['source','revision','unknown','overlimit','published','mismatched','title','tags','duplicate'])
+@pytest.mark.parametrize('mutation',['source','revision','unknown','published','mismatched','title','tags','duplicate'])
 def test_invalid_import_is_atomic_and_preserves_saved_copy(store,monkeypatch,mutation):
     post,run,pack=prepared(store,monkeypatch)
     save(store,NS,USER,post['id'],edit_form(post,pack['posts']))
@@ -54,7 +54,6 @@ def test_invalid_import_is_atomic_and_preserves_saved_copy(store,monkeypatch,mut
     if mutation=='source':pack['source']['text']='Other source'
     if mutation=='revision':pack['source_revision']='old'
     if mutation=='unknown':pack['posts']['other']=pack['posts'].pop('medium');pack['destinations']=['twitter','other']
-    if mutation=='overlimit':pack['posts']['twitter']['message']='x'*281
     if mutation=='published':pack['posts']['twitter']['publication_status']='published'
     if mutation=='mismatched':pack['destinations']=['twitter']
     if mutation=='title':pack['posts']['medium']['title']=None
@@ -106,3 +105,28 @@ def test_json_upload_and_export_routes(store,monkeypatch):
     assert exported.json['posts']['medium']['message']==pack['posts']['medium']['message']
     # This download can be loaded again, without local worker/run IDs.
     assert import_pack(store,NS,USER,post['id'],exported.data)==2
+
+
+def test_long_twitter_import_and_manual_save_are_truncated(store,monkeypatch):
+    post,_,pack=prepared(store,monkeypatch)
+    message='Edited 🌱 text\n'*30
+    pack['posts']['twitter']['message']=message
+    import_pack(store,NS,USER,post['id'],json.dumps(pack))
+    assert view(store,NS,USER,post['id'])['entries']['twitter']['message']==message[:280]
+    save(store,NS,USER,post['id'],edit_form(post,pack['posts']))
+    assert versions_for(store,NS,USER,post)['twitter']['message']==message[:280]
+    assert store.draft(NS,USER,post['id'])['text']==post['text']
+
+
+def test_sow_truncates_original_twitter_only_before_approval(store,monkeypatch):
+    from allotment.sowing import enqueue
+    source=('Long original 🌱\n'*30).rstrip()
+    post=store.save_draft(NS,USER,source)
+    publish_local(store,NS,USER,post['id'])
+    checked=[]
+    monkeypatch.setattr('allotment.preparation_approval.require_approval',lambda *args:checked.append(args[-1]['text']))
+    job=enqueue(store,NS,USER,post['id'],['twitter'])
+    assert checked==[source[:280]]
+    assert job['destination_posts']['twitter']['text']==source[:280]
+    assert job['destination_posts']['static']['text']==job['post']['text']==source
+    assert store.published(NS,USER,post['id'])['text']==source

@@ -14,6 +14,7 @@
 <form method="post" data-sow-launch action="{{ url_for('launch_post',namespace=namespace,user=user,post_id=post.id) }}">
 <input type="hidden" name="csrf" value="{{ csrf }}">
 <label class="check-label"><input type="checkbox" data-select-all-active> Select all active</label>
+<label class="check-label"><input type="checkbox" data-select-all-unpublished> Select all unpublished</label>
 <div class="destination-options">{% for d in destinations %}
 <div class="destination-option sow-destination" data-destination="{{ d.id }}" data-name="{{ d.name }}" data-configured="{{ 'true' if d.configured else 'false' }}" data-review-url="{{ url_for('sow_review',namespace=namespace,user=user,post_id=post.id,job_id=d.state.job_id or 'manual',action=d.id) }}">
 <div class="sow-destination-heading"><div class="check-label" title="{{ 'Test required' if not d.configured else d.view.label }}"><input type="checkbox" name="actions" value="{{ d.id }}" aria-label="Select {{ d.name }}" {% if d.needs_test %}disabled{% endif %}>

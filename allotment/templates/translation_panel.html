@@ -9,7 +9,7 @@
 <label>Confirmed context<textarea name="context" rows="4" maxlength="12000" placeholder="Facts, project stage, useful links or answers to the questions below">{{ translation.context }}</textarea></label>
 </details>
 <button class="button primary" data-translate type="submit">Generate versions</button>
-<a class="button secondary" href="{{ url_for('translation_guide',namespace=namespace,user=user) }}">Guide</a>
+<a class="button secondary" href="{{ url_for('translation_guide',namespace=namespace,user=user,post_id=post.id) }}" target="_blank" rel="noopener">Guide</a>
 <p class="action-error" data-translation-error hidden></p>
 </form>
 {% if translation.stale %}<p class="action-error">The source changed. Generate new versions or use the original.</p>{% endif %}

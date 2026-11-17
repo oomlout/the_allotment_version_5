@@ -32,6 +32,52 @@ def test_select_all_active_excludes_git_and_manual_icons_work_before_attempt(stu
     page.close()
 
 
+def test_select_unpublished_uses_persisted_checkmarks_and_skips_git_and_blocked(studio,monkeypatch):
+    store,origin,browser=studio
+    post=store.save_draft(NS,USER,'Cleanup selection')
+    monkeypatch.setattr('allotment.app.approval_status',lambda store,ns,user,recipe,account:{'valid':recipe['id'] in {'twitter','bluesky'}})
+    page=browser.new_page()
+    page.goto(f'{origin}/g/{NS}/{USER}/p/{post["id"]}/')
+    twitter=page.locator('[data-destination="twitter"]')
+    yes=twitter.locator('[data-verdict="successful"]')
+    yes.click();expect(yes).to_have_attribute('aria-pressed','true')
+    page.reload();expect(yes).to_have_attribute('aria-pressed','true')
+    git=page.locator('[data-destination="git"] [name="actions"]');git.check()
+    page.get_by_role('checkbox',name='Select all active',exact=True).check()
+    clean=page.get_by_role('checkbox',name='Select all unpublished',exact=True)
+    assert clean.evaluate('e=>e.indeterminate')
+    clean.check()
+    expect(twitter.locator('[name="actions"]')).not_to_be_checked()
+    expect(page.locator('[data-destination="bluesky"] [name="actions"]')).to_be_checked()
+    expect(page.locator('[data-destination="medium"] [name="actions"]')).to_be_disabled()
+    expect(git).to_be_checked()
+    clean.uncheck();expect(page.locator('[data-destination="bluesky"] [name="actions"]')).not_to_be_checked()
+    yes.click();expect(yes).to_have_attribute('aria-pressed','false')
+    clean.check();expect(twitter.locator('[name="actions"]')).to_be_checked()
+    expect(git).to_be_checked()
+    page.close()
+
+
+def test_platform_preview_opens_only_by_choice_and_resets_on_restore(studio):
+    store,origin,browser=studio
+    post=store.save_draft(NS,USER,'Preview state')
+    page=browser.new_page()
+    page.goto(f'{origin}/g/{NS}/{USER}/p/{post["id"]}/')
+    preview=page.locator('#platform-preview-panel')
+    expect(preview).not_to_have_attribute('open','')
+    preview.locator(':scope > summary').click()
+    expect(preview).to_have_attribute('open','')
+    page.reload();expect(preview).not_to_have_attribute('open','')
+    preview.locator(':scope > summary').click()
+    page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))")
+    expect(preview).not_to_have_attribute('open','')
+    page.get_by_role('checkbox',name='Select all unpublished',exact=True).wait_for()
+    expect(preview).not_to_have_attribute('open','')
+    preview.locator(':scope > summary').click()
+    expect(preview).to_have_attribute('open','')
+    page.close()
+
+
 def test_review_click_feedback_persists_after_reload_and_handles_errors(studio,monkeypatch):
     monkeypatch.setattr("allotment.app.approval_status",lambda *args:{"valid":True})
     store,origin,browser=studio;post,job=attempted(store)

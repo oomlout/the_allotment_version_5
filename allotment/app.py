@@ -379,8 +379,13 @@ def create_app(root=None, testing=False, garden=None):
         load_result(store,namespace,user,post_id,run_id)
         return send_file(job_run_folder(store,namespace,user,run_id)/'result.json',as_attachment=True,download_name=post_id+'-platforms.json',mimetype='application/json')
 
-    @app.get('/g/<namespace>/<user>/translation-guide.md')
+    @app.get('/g/<namespace>/<user>/translation-guide/')
     def translation_guide(namespace,user):
+        from .translation_guide import manual_guide
+        return manual_guide(store,namespace,user,request.args.get('post_id'))
+
+    @app.get('/g/<namespace>/<user>/translation-guide.md')
+    def translation_instructions(namespace,user):
         from .translations import GUIDE
         return send_file(GUIDE,as_attachment=True,download_name='platform_translation.md',mimetype='text/markdown')
 

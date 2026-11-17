@@ -180,7 +180,7 @@ Use ACTUAL TASK for current destination capabilities. Do not retrieve other file
 5. Draft from the canonical model
 
 - Create one posts entry per selected exact destination ID.
-- Keep the source Twitter unchanged unless an edit is authorized.
+- Keep the source Twitter wording, truncating the Twitter message to its first 280 characters when longer. Preserve source.text in full.
 - Apply the destination's purpose, rationale, decision rules, structure and field policies.
 - Do not pad short content to fill platform capacity.
 
@@ -264,13 +264,13 @@ WHY THIS APPROACH: The source tweet is the user's chosen starting point and the 
 
 BRIEF UPDATE STRUCTURE:
 
-- Use the supplied source text exactly, including punctuation, spelling, line breaks, emoji and hashtags.
+- Use the first 280 characters of the supplied source text exactly, including punctuation, spelling, line breaks, emoji and hashtags. Keep shorter text unchanged; do not add an ellipsis.
 - Only revise the Twitter message when the user explicitly requests that revision.
 
 DECISION RULES:
 
-- IF The user has supplied a source tweet and has not requested an edit to it. THEN Copy it exactly into source.text and the Twitter message.
-- IF The source exceeds the applicable limit or contains an unresolved factual issue. THEN Preserve source.text, identify the specific problem, and offer an explicitly labelled revision rather than silently changing the original.
+- IF The user has supplied a source tweet and has not requested an edit to it. THEN Copy it exactly into source.text and use its first 280 characters for the Twitter message.
+- IF The source exceeds 280 characters. THEN Preserve source.text in full and truncate only the Twitter message to the first 280 characters. Do not block the run or request permission for this authorized truncation. Flag unresolved factual issues separately.
 - IF The user supplies extra detail for adaptation but does not request a new Twitter version. THEN Use relevant detail in other destinations while retaining the original Twitter text.
 
 WHEN THE SOURCE HAS MORE SUBSTANCE:
@@ -287,8 +287,8 @@ INLINE HASHTAGS: Preserve source hashtags exactly unless their edit was requeste
 
 SEPARATE TAGS: Use an empty tags array.
 
-LINKS: - Preserve links already in the supplied tweet unless an edit is requested.
-- If drafting an explicitly requested revision, include a link only when it gives readers a real next step; verify the destination.
+LINKS: - Do not add project or resource links to Twitter/X. This destination is excluded from the link-inclusion default.
+- Preserve any link already in the original source under the source-preservation contract; do not append links from github_repo or links metadata. An explicitly requested rewritten version should omit outward links.
 
 AVOID:
 
@@ -505,8 +505,8 @@ INLINE HASHTAGS: A small relevant set is an editorial option, not a guaranteed d
 
 SEPARATE TAGS: Use an empty tags array for this pack.
 
-LINKS: - Only say 'link in bio' when the correct link is known to be present.
-- Use explicit verified directions when there is a real resource; do not invent a model listing or imply caption text automatically creates the intended link behaviour.
+LINKS: - Do not include outward URLs in Instagram captions, including URLs from the source. Instagram is excluded from the link-inclusion default.
+- Only say 'link in bio' when the correct link is known to be present. Otherwise omit the link direction; do not invent a profile link or model listing.
 
 AVOID:
 
@@ -1170,7 +1170,13 @@ For the accepted tab-bar photograph only:
 - Do not count or confidently identify blurred icons.
 - The visible '2 subscribers' label belongs only to the visible panel and does not establish the author's total audience.
 
-For Discord, WhatsApp Channel, Telegram Channel, Medium and Tumblr, include the supplied relevant project or resource URL in the message by default. Use github_repo when it is the relevant project destination; otherwise use the relevant URL from links or source_text. Keep the exact URL and put it naturally in the body or on its own final line. Include it in both the displayed message and JSON message. Do not invent a link when none is supplied, and do not claim the platform guarantees reach or never penalizes external links.
+Link policy (takes precedence over softer suggestions such as "occasionally" or "only when useful" in the platform sections): when the post supplies a relevant project or resource URL, actively find a natural place for it in every selected destination except Instagram and Twitter/X. Prefer one useful direct link, with a short description of what it leads to, in the body or on its own final line. Additional links are appropriate only when they serve different useful purposes in a longer post. Include the same complete URLs in the displayed message and JSON message, not just in strategy or delivery_notes.
+
+Include links by default in Discord, WhatsApp Channel, Telegram Channel, Medium, Tumblr, Facebook Page, Flickr and Pixelfed, and in relevant MakerWorld, Printables and Patreon drafts. Retain all existing hold states. For Bluesky, Mastodon and Threads, also include the relevant link when the useful update and the full URL can fit; shorten surrounding prose to make room. Prioritize links where there is ample space, no service character limit, or supplied current metadata confirms that URLs are excluded from a service's count. Never assume a URL-counting exemption: all messages must still fit the Studio max_chars supplied in ACTUAL TASK, including literal URL text. Reserve room for the complete URL before composing; do not leave a truncated or broken link. If a short destination genuinely cannot fit the link and a meaningful update, omit the link there and explain briefly in delivery_notes.
+
+Use github_repo when it is the relevant project destination; otherwise choose the relevant URL from links or source_text. Keep the supplied URL exact, do not invent or shorten it, and describe only what the supplied metadata establishes. Do not invent a link when none is supplied. These are the user's editorial preferences, not claims that any platform guarantees reach or never penalizes external links.
+
+Instagram: omit outward URLs entirely. Twitter/X: never add outward links from metadata; its existing source-preservation contract still applies to links already written in source_text. Keep source.text unchanged for every destination. Do not invent a "link in bio" workaround.
 
 Use actual relevant URLs. Only say “link in bio” when the required link has been confirmed there. Do not invent handles, model files or downloadable resources.
 
@@ -1192,7 +1198,7 @@ Required root fields and types:
 
 Each posts entry must contain:
 - title: a nonempty native title for Medium and Flickr; null for every other destination.
-- message: the complete, distinct, ready-to-use message string. Twitter must exactly equal source_text.
+- message: the complete, distinct, ready-to-use message string. Twitter must equal the first 280 characters of source_text, or all of it when shorter.
 - tags: an array of lowercase_underscore native tag strings for Tumblr and Flickr only; [] for all other destinations. Leave inline source hashtags unchanged.
 - strategy: a brief explanation of the editorial adaptation, separate from the message.
 - editorial_status: one of draft, needs_context, hold_quip_unavailable or hold_preparation_unavailable.
@@ -1202,7 +1208,7 @@ Use draft for a complete editorial draft, needs_context when a specific material
 
 The Studio derives platform names and repository capability metadata from ACTUAL TASK. Do not infer account login, test approval, publication or delivery from those capabilities. A held draft remains useful editorial output.
 
-Respect each destination's max_chars in ACTUAL TASK. Count Medium's title plus two newline characters plus message against that limit; other destinations count the message. These are implementation limits, not universal service claims. Medium must include "This post was drafted with AI assistance." in its first two paragraphs. All displayed messages, titles, tags and image descriptions must match their decoded JSON values exactly. Do not repeat the literal capture tags elsewhere.
+Truncate any overlong destination message to its max_chars in ACTUAL TASK, without an ellipsis, blocking error or follow-up question. Keep source.text unchanged. Count Medium's title plus two newline characters plus message against that limit; other destinations count the message. These are implementation limits, not universal service claims. Medium must include "This post was drafted with AI assistance." in its first two paragraphs. All displayed messages, titles, tags and image descriptions must match their decoded JSON values exactly. Do not repeat the literal capture tags elsewhere.
 
 
 10. VALIDATION
@@ -1213,10 +1219,10 @@ Check structure and types against the complete inline contract in section 9. The
 - Coverage equals the user-selected subset or the verified selectable social catalog; explain omissions and held entries.
 - Each selected message body is complete and distinct while preserving the common facts.
 - source.text is exactly the user's original tweet.
-- If Twitter is selected and no edit was requested, posts.twitter.message equals source.text exactly.
+- If Twitter is selected and no edit was requested, posts.twitter.message equals the first 280 characters of source.text, or all of it when shorter.
 - Actual titles and native tags are separate from the body; inline hashtags are included in the body.
 - Each actual preparation payload fits the relevant verified repository ceiling; use platform-specific counting when near a service limit.
-- If the original Twitter source exceeds a limit, preserve source.text, flag the conflict and obtain an explicit edit direction rather than silently shortening it.
+- If the original Twitter source exceeds 280 characters, preserve source.text and truncate only posts.twitter.message to the first 280 characters; this must not fail the run.
 - Medium preparation_text, when present, equals title + two newline characters + message.
 - Held status and recipe/preset metadata match the recorded evidence; nothing implies unverified local enablement or delivery.
 - All displayed messages, titles, tags and alt text match decoded file values.

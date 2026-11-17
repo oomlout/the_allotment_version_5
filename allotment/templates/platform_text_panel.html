@@ -1,4 +1,4 @@
-<details class="panel post-platform-text" id="platform-text-panel" {% if platform_text.checked or platform_text.saved %}open{% endif %}>
+<details class="panel post-platform-text" id="platform-text-panel">
 <summary><h2>Platform text</h2></summary>
 <div class="translation-review-actions"><button class="button primary" type="submit" form="platform-text-editor">Save platform text</button>{% if platform_text.enabled %}<a class="button secondary" href="{{ url_for('export_platform_text',namespace=namespace,user=user,post_id=post.id) }}">Download saved JSON</a>{% endif %}</div>
 {% if platform_text.pending %}<p>Loaded for review. Save platform text to use it in Sow.</p>{% elif platform_text.enabled %}<p>Saved versions are used by Sow. Unchecked platforms use the original.</p>{% else %}<p>Unchecked platforms use the original post.</p>{% endif %}
@@ -17,8 +17,8 @@
 <details class="platform-copy" data-platform-copy="{{ id }}"><summary><span class="platform-logo sow-logo" aria-hidden="true" style="--platform-logo:url('{{ url_for('static',filename='platform-logos/'+id+'.svg') }}')"></span> {{ platform.name }}{% if platform_text.checked and value %} · Custom{% endif %}</summary>
 <label class="platform-use"><input type="checkbox" name="platforms" value="{{ id }}" {% if platform_text.checked and value %}checked{% endif %}> Use this version for {{ platform.name }}</label>
 {% if id in ['medium','flickr'] %}<label>Title for {{ platform.name }}<input type="text" name="title_{{ id }}" value="{{ value.get('title') or '' }}"></label>{% endif %}
-<label for="platform-message-{{ id }}">Text for {{ platform.name }}</label><textarea id="platform-message-{{ id }}" name="message_{{ id }}" rows="5" maxlength="{{ platform.get('max_chars',10000) }}">{{ value.get('message',post.text) }}</textarea>
-<p class="translation-note">Limit: {{ platform.get('max_chars',10000) }} characters{% if id=='medium' %}, including title{% endif %}.</p>
+<label for="platform-message-{{ id }}">Text for {{ platform.name }}</label><textarea id="platform-message-{{ id }}" name="message_{{ id }}" rows="5">{{ value.get('message',post.text) }}</textarea>
+<p class="translation-note">Truncates to {{ platform.get('max_chars',10000) }} characters on save{% if id=='medium' %}, including title{% endif %}.</p>
 {% if id in ['flickr','tumblr'] %}<label>Tags for {{ platform.name }}<input name="tags_{{ id }}" value="{{ value.get('tags',[])|join(', ') }}" placeholder="tag_one, tag_two"></label>{% endif %}
 <label>Readiness for {{ platform.name }}<select name="status_{{ id }}">{% for status in platform_text.statuses %}<option value="{{ status }}" {% if value.get('editorial_status','draft')==status %}selected{% endif %}>{{ {'draft':'Ready for preparation','needs_context':'Needs context','hold_quip_unavailable':'Quip unavailable','hold_preparation_unavailable':'Preparation unavailable'}[status] }}</option>{% endfor %}</select></label>
 {% if value.get('strategy') %}<details><summary>Editorial note</summary><p>{{ value.strategy }}</p></details>{% endif %}

@@ -31,8 +31,9 @@ def enqueue(store,namespace,user,post_id,actions,custom=None):
         post=store.published(namespace,user,post_id)
         if not post or (store.draft_dir(namespace,user,post_id)/'post.yaml').exists():raise ValueError('Publish the local post or its edits before sowing.')
         states=store.destination_states(namespace,user,post_id);accounts=store.settings(namespace,user).get('destinations',{})
-        from .translations import versions_for,preparation_text
+        from .translations import versions_for,preparation_text,platform_message,platform_fields
         versions=versions_for(store,namespace,user,post)
+        versions={k:{**v,**platform_fields(k,v.get('title'),v['message'],plugins[k].get('max_chars',10000))} for k,v in versions.items()}
         for action in actions:
             state=states.get(action,{})
             if blocks_retry(action,state,SOW_BUILTINS):
@@ -43,7 +44,7 @@ def enqueue(store,namespace,user,post_id,actions,custom=None):
                 translated=versions.get(action)
                 if translated and translated['editorial_status']!='draft':raise ValueError(f"{recipe['name']}: review the held translation or choose Use original.")
                 prepared_post={**post,'text':preparation_text(action,translated)} if translated else post
-                if len(prepared_post['text'])>recipe.get('max_chars',100000):raise ValueError(f"{recipe['name']}: translated text exceeds the current recipe limit.")
+                prepared_post={**prepared_post,'text':platform_message(action,prepared_post['text'],recipe.get('max_chars',10000))}
                 try:
                     require_approval(store,namespace,user,recipe,account,prepared_post)
                 except ValueError:
@@ -73,6 +74,7 @@ def enqueue(store,namespace,user,post_id,actions,custom=None):
             if action in versions:
                 payload['text']=preparation_text(action,versions[action])
                 payload['translation']=deepcopy(versions[action])
+            if action not in SOW_BUILTINS:payload['text']=platform_message(action,payload['text'],plugins[action].get('max_chars',10000))
             for attachment in payload['attachments']:
                 attachment['original_file']=attachment['file']
                 attachment['display_variant']=framing

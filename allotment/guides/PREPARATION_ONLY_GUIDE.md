@@ -39,6 +39,10 @@ WhatsApp channels additionally require Channel info, owner-only Channel settings
 
 Tumblr chooses its Photo composer for an image and Text for text-only input. Its block editor requires two Select All shortcuts before exact caption copy-back. Unsupported video input is rejected before browser interaction; do not silently use Text for a video.
 
+Instagram and Tumblr use padded, control-specific search regions so small layout shifts do not clip labels or icons. Keep unique-match and fresh-pixel checks; widening a region must not allow ambiguous targets. Instagram's Original label stays tightly isolated from its icon and photo, and Next searches stay inside the white header: including surrounding graphics prevents OCR from recognizing these small labels. Navigation already verifies the exact URL, so the immediately following visual identity step checks the account and owner control without copying the same URL again. Tumblr also checks the selected blog in the composer because one account may own several blogs. Retain its caption placeholder template because OCR misses the light text beside the uploaded image. Final text copy-back, image preview and URL checks establish completion; a pixel-identical Post now button is not required. Instagram retains Original crop and both Next transitions to preserve the full image before adding the caption.
+
+For portrait uploads, keep Instagram's Original OCR crop below the rounded menu edge, and let Tumblr's caption search reach below the image. Validate search regions against portrait as well as fixed-sample evidence; the sample's shorter image can hide these failures.
+
 WhatsApp currently permits only one active web tab. Do not click **Use here** or start another WhatsApp draft while an existing draft awaits user review. Channel calibration must wait if it would displace a prepared group draft. Preserve the user's active draft and report this platform limitation; do not claim multiple WhatsApp drafts remain independently usable in separate tabs.
 
 ## Actions

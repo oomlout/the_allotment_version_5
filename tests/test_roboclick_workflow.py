@@ -84,6 +84,18 @@ def test_inline_html_preserves_json_tokens_and_image_crop(tmp_path):
     assert Operations(MagicMock(),tmp_path).image_crop(SAMPLE_IMAGE)==[.21875,0,.78125,1]
 
 
+def test_accessibility_checks_count_enabled_controls_and_report_errors(tmp_path):
+    from allotment.workflow_extensions.operations import ExtendedOperations
+    ops=ExtendedOperations(MagicMock(),tmp_path)
+    state={'capture_id':'read','elements':[{'control_type':'Button','name':'Remove altered.png','enabled':True},
+        {'control_type':'Button','name':'Send','enabled':False}]}
+    assert ops.elements_check(state,{'name_regex':'^Remove '},min_count=1,max_count=1)['count']==1
+    with pytest.raises(NotReady):ops.elements_check(state,{'name':'Send','enabled':True},min_count=1)
+    with pytest.raises(NotReady):ops.elements_check(state,{'name_regex':'^Remove '},min_count=2)
+    with pytest.raises(ValueError,match='Upload failed'):
+        ops.elements_check(state,{'name':'Send'},max_count=0,on_mismatch='error',message='Upload failed')
+
+
 def test_progress_reports_wait_reason_deadline_and_loop_position(tmp_path):
     from datetime import datetime,timezone
     session=MagicMock();reports=[]

@@ -91,3 +91,21 @@ Run `python -m pytest -q` for automated checks. Run
 the desktop idle for the native fixture. It uses the production YAML and asserts
 one local AI prompt, one image and zero social Post/Send attempts. A mocked or
 headless pass is not a native verification result.
+
+## Optional Windows observations
+
+`allotment/workflow_extensions/` adds two generic primitives without changing the
+social preparation engine. `desktop_capture_accessibility` takes a read-only
+Windows UI Automation snapshot of the reserved browser document (pywinauto,
+Windows only). It supplies names, control types and enabled states, never clicks.
+`data_elements_check` checks exact names or name patterns and count ranges in that
+snapshot. A pending mismatch is retryable; an error mismatch stops immediately.
+Both are registered as read-only operations for bounded polls. `ExtendedOperations`
+can replace a Workflow's `operations` object. Its standalone mirror is
+`roboclick_workflow_extensions.py`, with `roboclick_accessibility.py` and the two
+registered actions in the shared library. Install pywinauto>=0.6.9,<0.7 on Windows.
+
+The capture helper has a 15-second default timeout (maximum 30); the parent checks
+Stop and focus throughout and terminates only its helper on interruption. Selectors
+and their platform meaning belong to YAML. The ChatGPT recipe supplies upload
+controls and counts; it does not compare the thumbnail to the source image.

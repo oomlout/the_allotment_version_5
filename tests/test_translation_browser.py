@@ -72,6 +72,24 @@ def test_translate_feedback_review_and_reload(studio,monkeypatch):
     page.set_viewport_size({'width':390,'height':844})
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
     page.screenshot(path=str(store.local/'translation-ui.png'),full_page=True)
+    # A delayed new launch and late polling response must not restore the old run.
+    expect(panel).not_to_have_attribute('open','')
+    panel.locator(':scope > summary').click()
+    button.click()
+    expect(button).to_have_text('Starting…')
+    expect(panel.locator('#job-run-error')).to_be_hidden()
+    expect(panel.locator('[data-run-detail]')).to_have_text('ChatGPT')
+    expect(panel.locator('[data-run-wait]')).to_be_hidden()
+    expect(panel.locator('[data-run-deadline]')).to_be_hidden()
+    page.wait_for_timeout(1200)
+    expect(panel.locator('#job-run-state')).to_have_text('Starting launch…')
+    held.pop().fulfill(json={'id':'run-new'})
+    expect(panel.locator('#job-run-state')).to_have_text('Starting')
+    page.wait_for_timeout(1200)
+    expect(panel.locator('#job-run-error')).to_be_hidden()
+    data['run']={'id':'run-new','kind':'translation','status':'running','operation':'Choose Chrome','destinations':[]}
+    expect(panel.locator('#job-run-state')).to_have_text('Choose Chrome')
+    expect(panel.locator('[data-run-detail]')).to_have_text('ChatGPT')
     assert not errors
     page.close()
 

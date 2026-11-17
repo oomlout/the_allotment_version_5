@@ -42,17 +42,31 @@ def test_tagged_output_preserves_unicode_and_rejects_echo_or_wrong_run(store,mon
         with pytest.raises(ValueError):validate({**result,**change},run)
 
 
-@pytest.mark.parametrize('mutation',['duplicate','overlimit','published','twitter','medium','tags','title'])
+@pytest.mark.parametrize('mutation',['duplicate','published','twitter','medium','tags','title'])
 def test_bad_editorial_payloads_are_rejected(store,monkeypatch,mutation):
     post,run,result=prepared(store,monkeypatch)
     if mutation=='duplicate':result['posts']['medium']['message']=post['text']
-    if mutation=='overlimit':result['posts']['medium']['message']+='x'*10001
     if mutation=='published':result['posts']['twitter']['publication_status']='published'
     if mutation=='twitter':result['posts']['twitter']['message']='Rewritten'
     if mutation=='medium':result['posts']['medium']['message']='No disclosure'
     if mutation=='tags':result['posts']['medium']['tags']=['bad tag']
     if mutation=='title':result['posts']['twitter']['title']='Wrong title'
     with pytest.raises(ValueError):validate(result,run)
+
+
+@pytest.mark.parametrize('length',[279,280,281,400])
+@pytest.mark.parametrize('already_truncated',[False,True])
+def test_twitter_truncation_preserves_source_and_other_platforms(store,monkeypatch,length,already_truncated):
+    _,run,result=prepared(store,monkeypatch)
+    source=('A🌱\n'*140)[:length]
+    run['source']['text']=result['source']['text']=source
+    result['posts']['twitter']['message']=source[:280] if already_truncated else source
+    medium=deepcopy(result['posts']['medium'])
+    checked=validate(result,run)
+    assert checked['posts']['twitter']['message']==source[:280]
+    assert checked['source']['text']==run['source']['text']==source
+    assert checked['posts']['medium']['message']==medium['message']
+    assert validate(checked,run)==checked
 
 
 def test_review_is_explicit_revision_bound_and_sow_keeps_original(store,monkeypatch):
@@ -136,7 +150,7 @@ def test_runtime_prompt_includes_all_guidance_without_external_chat_or_bundle(st
     assert 'Required root fields and types:' in guide
     assert 'Shared image alt text:' in guide and 'BEGIN MESSAGE' in guide
     assert json.dumps(run['source']['text'],ensure_ascii=False) in prompt
-    assert 'For discord, whatsapp_channel, telegram_channel, medium and tumblr, include the relevant supplied project/resource URL' in prompt
+    assert 'include relevant supplied project/resource URLs in every selected destination where possible, except instagram and twitter' in prompt
     assert 'Use github_repo when relevant' in prompt
 
 

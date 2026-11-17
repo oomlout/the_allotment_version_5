@@ -5,19 +5,22 @@ from .storage import read_yaml,lock
 from .roboclick import framework
 from .roboclick.desktop import Desktop
 from .roboclick.workflow import Workflow,validate_steps
+from .workflow_extensions.operations import ExtendedOperations
 from .translations import tags,validate
 
 RECIPE=Path(__file__).parent/'plugins/chatgpt_translation.yaml'
 ACTIONS=Path(__file__).parent/'roboclick/workflow_actions'
 DESKTOP_ACTIONS=Path(__file__).parent/'roboclick/actions'
-DESKTOP_COMMANDS={'desktop_check_url','desktop_wait','desktop_paste_image','desktop_find_image',
+EXTENSION_ACTIONS=Path(__file__).parent/'workflow_extensions/actions'
+DESKTOP_COMMANDS={'desktop_check_url','desktop_wait','desktop_paste_image',
                   'desktop_paste_text','desktop_capture_text','desktop_hotkey','desktop_screenshot',
                   'desktop_capture_page'}
 
 
 def action_lookup():
     desktop=framework.build_action_lookup(DESKTOP_ACTIONS)
-    return {**{name:desktop[name] for name in DESKTOP_COMMANDS},**framework.build_action_lookup(ACTIONS)}
+    return {**{name:desktop[name] for name in DESKTOP_COMMANDS},**framework.build_action_lookup(ACTIONS),
+            **framework.build_action_lookup(EXTENSION_ACTIONS)}
 
 
 def validate_recipe(recipe):
@@ -41,9 +44,10 @@ def validate_recipe(recipe):
 
 class QueryPolicy:
     """Enforce consent/checks; no clicks, keyboard sequencing or UI selectors."""
-    def __init__(self,session,url,prompt,images,run_id):
+    def __init__(self,session,url,prompt,images,run_id,upload_checks):
         self.session,self.url,self.prompt,self.images,self.run_id=session,url,prompt,list(images),run_id
-        self.pasted='';self.uploaded=[];self.verified=[];self.copies=0
+        self.pasted='';self.uploaded=[];self.uploads_ready=0;self.copies=0
+        self.upload_checks=upload_checks;self.upload_snapshot=None;self.upload_passes=set()
         self.site_checked=False;self.root_checked=False;self.composer=False;self.match=None
         self.copy=None;self.asserted=False;self.submitted=False;self.conversation=None
 
@@ -56,14 +60,16 @@ class QueryPolicy:
         if command in {'desktop_paste_text','desktop_paste_image'} and not self.composer:
             raise ValueError('Find and focus the empty composer before input.')
         if command=='desktop_paste_image':
+            if not self.asserted or self.pasted!=self.prompt:
+                raise ValueError('Verify the full prompt in the focused composer before attaching an image.')
             if len(self.uploaded)>=len(self.images) or args.get('image')!=self.images[len(self.uploaded)]:
                 raise ValueError('Image is not part of the authorized input.')
         if command=='desktop_paste_text' and not self.prompt.startswith(self.pasted+args['text']):
             raise ValueError('Text is not part of the authorized prompt.')
         if command=='desktop_hotkey' and 'enter' in args['keys']:
             if (self.submitted or not self.asserted or self.copies<2 or not self.root_checked
-                    or self.pasted!=self.prompt or self.uploaded!=self.images or self.verified!=self.images):
-                raise ValueError('AI submission needs the full prompt, verified images, URL and two fresh text checks.')
+                    or self.pasted!=self.prompt or self.uploaded!=self.images or self.uploads_ready!=len(self.images)):
+                raise ValueError('AI submission needs the full prompt, completed uploads, URL and two fresh text checks.')
             self.submitted=True
             self.session.log('translation-prompt-submission-attempted',{'run_id':self.run_id,'social_submission':False})
 
@@ -75,9 +81,20 @@ class QueryPolicy:
             self.site_checked=True;self.root_checked=True
         elif command=='desktop_find_text_any':self.match=result
         elif command=='desktop_click_match':self.composer=True
-        elif command=='desktop_paste_image':self.uploaded.append(args['image']);self.copies=0
-        elif command=='desktop_find_image':
-            if self.uploaded and args['image']==self.uploaded[-1]:self.verified.append(args['image'])
+        elif command=='desktop_paste_image':
+            self.uploaded.append(args['image']);self.copies=0;self.uploads_ready=0
+            values['uploaded_count']=len(self.uploaded)
+            self.upload_snapshot=None;self.upload_passes.clear()
+        elif command=='desktop_capture_accessibility':
+            self.upload_snapshot=result;self.upload_passes.clear();self.uploads_ready=0
+        elif command=='data_elements_check' and self.upload_snapshot is not None:
+            if args.get('snapshot')!=self.upload_snapshot or result.get('capture_id')!=self.upload_snapshot.get('capture_id'):
+                raise ValueError('Upload checks need the current accessibility snapshot.')
+            for kind,match in self.upload_checks.items():
+                expected=len(self.uploaded) if kind=='attachments' else 1 if kind=='ready' else 0
+                if args.get('match')==match and args.get('min_count')==args.get('max_count')==expected and result.get('count')==expected:
+                    self.upload_passes.add(kind)
+            if self.upload_passes=={'attachments','ready','busy','error'}:self.uploads_ready=len(self.uploaded)
         elif command=='desktop_paste_text':
             self.pasted+=args['text'];self.copies=0;self.copy=None;self.root_checked=False
         elif command=='desktop_capture_text':self.copy=result
@@ -97,11 +114,13 @@ class QueryPolicy:
 
 def make_workflow(session,recipe,run,folder,update):
     prompt=(folder/'prompt.txt').read_text(encoding='utf-8');begin,end=tags(run)
-    policy=QueryPolicy(session,recipe['url'],prompt,run['images'],run['id'])
+    policy=QueryPolicy(session,recipe['url'],prompt,run['images'],run['id'],recipe['upload_checks'])
     values={'url':recipe['url'],'prompt_file':str((folder/'prompt.txt').resolve()),
-            'images':run['images'],'begin_tag':begin,'end_tag':end}
+            'images':run['images'],'begin_tag':begin,'end_tag':end,'upload_checks':recipe['upload_checks']}
     lookup=action_lookup();validate_steps(recipe['steps'],lookup)
-    return Workflow(session,folder,values,lookup,framework.run_action,update,policy.before,policy.after)
+    workflow=Workflow(session,folder,values,lookup,framework.run_action,update,policy.before,policy.after)
+    workflow.operations=ExtendedOperations(session,folder)
+    return workflow
 
 
 def run_pipeline(store,folder,run,update,stop):

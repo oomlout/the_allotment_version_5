@@ -8,11 +8,14 @@
   const active=['queued','countdown','paused','running'];
   let run=null,destinations=[],timer,flight=null,revision=0,starting=false,translating=false,controlPending=false;
   const pending=new Set(),errors=new Map();
+  const retiredRuns=new Set();
   const harvestButtons=[...document.querySelectorAll('.harvest-form button')];
   harvestButtons.forEach(button=>{button.dataset.caption=button.textContent;button.dataset.initialDisabled=String(button.disabled);});
   const field=(node,name)=>node.querySelector(`[data-${name}]`);
   const selectAll=field(root,'select-all-active');
+  const selectUnpublished=field(root,'select-all-unpublished');
   const activeBoxes=()=>[...form.querySelectorAll('[name="actions"]:not(:disabled)')].filter(box=>box.value!=='git');
+  const posted=box=>box.closest('[data-destination]').querySelector('[data-verdict="successful"]').getAttribute('aria-pressed')==='true';
   for(const name of ['run-wait','run-deadline']){
     if(field(progressPanel,name))continue;
     const node=document.createElement('p');node.setAttribute(`data-${name}`,'');node.hidden=true;
@@ -38,12 +41,28 @@
   const text=(node,value)=>{if(node.textContent!==value)node.textContent=value;};
   const message=(node,value)=>{text(node,value||'');node.hidden=!value;if(node.classList.contains('action-error'))node.title=value||'';};
   const busy=()=>starting||active.includes(run?.status);
+  function beginLaunch(kind){
+    if(run?.id)retiredRuns.add(run.id);
+    revision++;clearTimeout(timer);starting=true;translating=kind==='translation';
+    run={kind,status:'queued',destinations:[]};displayedRun='';errors.clear();
+    controlPending=false;controls.removeAttribute('action');
+    message(field(root,'sow-error'),'');
+    if(translationPanel)message(field(translationPanel,'translation-error'),'');
+    setupLink.hidden=true;render();
+  }
   function selection(){
     if(selectAll){
       const boxes=activeBoxes(),selected=boxes.filter(box=>box.checked).length;
       selectAll.disabled=busy()||!boxes.length;
       selectAll.checked=!!boxes.length&&selected===boxes.length;
       selectAll.indeterminate=selected>0&&selected<boxes.length;
+    }
+    if(selectUnpublished){
+      const boxes=activeBoxes(),unpublished=boxes.filter(box=>!posted(box));
+      const selected=boxes.filter(box=>box.checked),remaining=unpublished.filter(box=>box.checked);
+      selectUnpublished.disabled=busy()||pending.size>0||!unpublished.length;
+      selectUnpublished.checked=!!unpublished.length&&remaining.length===unpublished.length&&selected.length===remaining.length;
+      selectUnpublished.indeterminate=selected.length>0&&!selectUnpublished.checked;
     }
     const count=form.querySelectorAll('[name="actions"]:checked:not(:disabled)').length;
     launch.disabled=busy()||pending.size>0||root.dataset.published!=='true';
@@ -152,39 +171,45 @@
     }catch(_){} // The durable history is also rendered on the next page load.
   }
   function poll(){
-    clearTimeout(timer);if(flight)return flight;
+    clearTimeout(timer);if(starting){timer=setTimeout(poll,800);return Promise.resolve();}if(flight)return flight;
     const version=revision;
     flight=(async()=>{
       try{
-        const data=await request(root.dataset.statusUrl);if(version!==revision)return;
+        const data=await request(root.dataset.statusUrl);if(version!==revision||starting)return;
+        if(data.run&&retiredRuns.has(data.run.id))return;
         const finished=active.includes(run?.status)&&data.run&&!active.includes(data.run.status);
         run=data.run;destinations=data.destinations||[];render();
         if(finished){if(['harvest','translation'].includes(run.kind)){location.reload();return;}void refreshHistory(run.id);}
       }
-      catch(error){message(field(root,'sow-error'),error.message);}
+      catch(error){if(version===revision&&!starting)message(field(root,'sow-error'),error.message);}
       finally{flight=null;timer=setTimeout(poll,busy()?800:5000);}
     })();return flight;
   }
   selectAll?.addEventListener('change',()=>{for(const box of activeBoxes())box.checked=selectAll.checked;selection();});
+  selectUnpublished?.addEventListener('change',()=>{
+    for(const box of activeBoxes())box.checked=selectUnpublished.checked&&!posted(box);
+    selection();
+  });
   form.addEventListener('change',selection);
   translationForm?.addEventListener('submit',async event=>{
     event.preventDefault();if(busy())return;
-    const errorNode=field(translationPanel,'translation-error');starting=true;translating=true;revision++;message(errorNode,'');render();
+    const errorNode=field(translationPanel,'translation-error');beginLaunch('translation');
     try{
       const data=await request(translationForm.action,{method:'POST',body:new FormData(translationForm)});revision++;
       run={id:data.id,kind:'translation',status:'queued',destinations:[]};
-    }catch(error){message(errorNode,error.message);}
+    }catch(error){run=null;message(errorNode,error.message);}
     finally{starting=false;translating=false;render();void poll();}
   });
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(launch.disabled)return;
-    const payload=new FormData(form);starting=true;revision++;message(field(root,'sow-error'),'');setupLink.hidden=true;render();
+    const payload=new FormData(form);beginLaunch('launch');
     try{
       const data=await request(form.action,{method:'POST',body:payload});revision++;
       run={id:data.id,status:'queued',kind:'launch',destinations:[...new Set([...payload.getAll('actions'),'static','summary'])]};
       for(const d of destinations)if(run.destinations.includes(d.id))Object.assign(d,{status:'pending',label:'Waiting',verdict:'',reviewable:false,blocked:true,error:''});
     }
     catch(error){
+      run=null;
       message(field(root,'sow-error'),error.message);
       if(error.platform&&error.setupUrl){
         errors.set(error.platform,error.message);

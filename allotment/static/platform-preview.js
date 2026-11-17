@@ -21,11 +21,15 @@
   function showImages(){
     panel.querySelectorAll('.platform-preview-images').forEach(group=>group.hidden=!images.checked);
   }
-  // Previews are text-only on every page load, including browser history restores.
-  function resetImages(){images.checked=false;showImages();}
+  // A browser history restore can restore <details open>; opening is manual only.
+  function resetPreview(){
+    panel.open=false;
+    const textPanel=document.getElementById('platform-text-panel');if(textPanel)textPanel.open=false;
+    images.checked=false;showImages();
+  }
   images.addEventListener('change',showImages);
   form?.addEventListener('input',render);
   form?.addEventListener('change',render);
-  window.addEventListener('pageshow',resetImages);
-  resetImages();render();
+  window.addEventListener('pageshow',resetPreview);
+  resetPreview();render();
 })();

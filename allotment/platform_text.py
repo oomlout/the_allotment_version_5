@@ -5,7 +5,7 @@ import re
 
 from .storage import read_yaml,write_yaml,now
 from .lifecycle import revision
-from .translations import catalog,current_post,private_folder,load_result
+from .translations import catalog,current_post,private_folder,load_result,platform_fields
 
 STATUSES=('draft','needs_context','hold_quip_unavailable','hold_preparation_unavailable')
 MAX_IMPORT=2*1024*1024
@@ -67,9 +67,7 @@ def checked_entry(key,value,recipe):
     if status not in STATUSES:raise ValueError(f'{key}: invalid editorial status.')
     ready=bool(recipe.get('preparation_ready',recipe.get('engine')=='oomlout_roboclick'))
     if not ready:status='hold_quip_unavailable' if key=='patreon' else 'hold_preparation_unavailable'
-    payload=(title+'\n\n' if key=='medium' else '')+message
-    if len(payload)>recipe.get('max_chars',10000):raise ValueError(f'{recipe["name"]}: text exceeds {recipe.get("max_chars",10000)} characters.')
-    return {'title':title,'message':message,'tags':tags,'editorial_status':status,
+    return {**platform_fields(key,title,message,recipe.get('max_chars',10000)),'tags':tags,'editorial_status':status,
         'publication_status':'not_published','strategy':value.get('strategy','') if isinstance(value.get('strategy',''),str) else '',
         'platform_name':recipe['name'],'repository_max_chars':recipe.get('max_chars',10000),'recipe_supports_preparation':ready}
 

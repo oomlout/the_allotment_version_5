@@ -26,10 +26,10 @@ steps:
   - 0.38
   owner_text: Camera Roll
   owner_region:
-  - 0.47
-  - 0.42
-  - 0.53
-  - 0.46
+  - 0.4
+  - 0.38
+  - 0.62
+  - 0.54
   profile_url: '{{ profile_url }}'
 - command: prepare_navigate
   url: '{{ base_url }}/photos/upload/'

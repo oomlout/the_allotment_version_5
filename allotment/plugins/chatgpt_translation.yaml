@@ -1,4 +1,4 @@
-# All browser steps and wait reasons are configured here. No hidden translation actions.
+# Translation uses read-only Windows accessibility for upload completion, never image pixel matching.
 schema_version: 2
 kind: translation
 id: chatgpt_translation
@@ -44,34 +44,6 @@ steps:
     ref: composer
   label: Focusing the empty composer
 - for_each:
-    ref: images
-  as: image
-  steps:
-  - command: data_image_crop
-    image:
-      ref: image
-    aspect_ratio: 1
-    save_as: thumbnail_crop
-    label: Preparing the image preview check
-  - command: desktop_paste_image
-    label: Attaching the image
-    image:
-      ref: image
-  - command: desktop_find_image
-    label: Checking the image preview
-    image:
-      ref: image
-    region:
-    - 0.25
-    - 0.1
-    - 0.95
-    - 0.95
-    threshold: 0.82
-    reference_region:
-      ref: thumbnail_crop
-    allow_multiple: true
-  label: Image
-- for_each:
     ref: chunks
   as: chunk
   steps:
@@ -84,6 +56,83 @@ steps:
     label: Letting the pasted text settle
     detail: Allowing the composer to process this prompt chunk
   label: Prompt chunk
+- for_each:
+    ref: images
+  as: image
+  steps:
+  - command: desktop_capture_text
+    name: ai-before-image
+    save_as: image_focus_copy
+    label: Checking composer focus before attaching
+  - command: data_assert_equal
+    actual:
+      ref: image_focus_copy
+    expected:
+      ref: prompt
+    normalize_whitespace: true
+    label: Verifying the prompt before attaching
+  - command: desktop_paste_image
+    label: Attaching the image
+    image:
+      ref: image
+  - label: Waiting for the image upload to finish
+    poll:
+      timeout: 120
+      interval: 2
+      observations: 2
+      reason: Waiting for ChatGPT to finish the image upload
+    steps:
+    - command: desktop_capture_accessibility
+      label: Reading upload status
+      control_types:
+      - Button
+      - ProgressBar
+      - Text
+      timeout: 15
+      save_as: upload_state
+    - command: data_elements_check
+      label: Checking for upload errors
+      snapshot:
+        ref: upload_state
+      match:
+        ref: upload_checks.error
+      min_count: 0
+      max_count: 0
+      on_mismatch: error
+      message: ChatGPT reported an upload error. Check the open tab before retrying.
+    - command: data_elements_check
+      label: Waiting for upload progress to finish
+      snapshot:
+        ref: upload_state
+      match:
+        ref: upload_checks.busy
+      min_count: 0
+      max_count: 0
+      on_mismatch: pending
+      message: ChatGPT is still uploading the image.
+    - command: data_elements_check
+      label: Checking the attachment count
+      snapshot:
+        ref: upload_state
+      match:
+        ref: upload_checks.attachments
+      min_count:
+        ref: uploaded_count
+      max_count:
+        ref: uploaded_count
+      on_mismatch: pending
+      message: Waiting for ChatGPT to register all attached images.
+    - command: data_elements_check
+      label: Checking the composer is ready
+      snapshot:
+        ref: upload_state
+      match:
+        ref: upload_checks.ready
+      min_count: 1
+      max_count: 1
+      on_mismatch: pending
+      message: Waiting for ChatGPT to finish the upload and enable the composer.
+  label: Image
 - command: desktop_capture_text
   label: Reading back the complete prompt
   name: ai-prompt-check
@@ -206,3 +255,16 @@ steps:
 - command: desktop_screenshot
   label: Platform versions captured
   name: translation-captured
+upload_checks:
+  attachments:
+    control_type: Button
+    name_regex: ^Remove .+
+  ready:
+    control_type: Button
+    name_regex: '^Send(?: prompt| message)?$'
+    enabled: true
+  busy:
+    control_type: ProgressBar
+  error:
+    name_regex: (?i)^(?:upload failed|failed to upload|unable to upload|error uploading|file
+      upload limit|you.ve reached.*upload)
