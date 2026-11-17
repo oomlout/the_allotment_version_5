@@ -65,9 +65,13 @@
       selectUnpublished.indeterminate=selected.length>0&&!selectUnpublished.checked;
     }
     const count=form.querySelectorAll('[name="actions"]:checked:not(:disabled)').length;
-    launch.disabled=busy()||pending.size>0||root.dataset.published!=='true';
+    const unpublished=root.dataset.published!=='true';
+    const launchReason=busy()?'Launch in progress':pending.size>0?'Saving review…':unpublished?'Publish locally to enable Launch.':'';
+    launch.disabled=!!launchReason;
+    launch.title=launchReason;
+    launch.style.cursor=busy()||pending.size>0?'wait':unpublished?'not-allowed':'';
     text(launch,starting?'Starting…':'Launch');
-    text(field(root,'selection-status'),busy()?'Launch in progress':count?`${count} selected`:'Website and summary only');
+    text(field(root,'selection-status'),launchReason||(count?`${count} selected`:'Website and summary only'));
     if(translateButton){translateButton.disabled=busy();text(translateButton,starting&&translating?'Starting…':'Generate versions');}
   }
   function render(){

@@ -15,7 +15,7 @@ from flask import Flask, abort, flash, jsonify, redirect, render_template, reque
 import yaml
 
 from .storage import BUILTINS, IMAGES, Store, git, inside, new_post_id, read_yaml, slug, valid_remote, write_yaml
-from .website import build_site
+from .website import build_site, package_site
 from .worker import resolve_action
 from .approval import run_folder
 from .preparation_approval import approval_status, approve_run
@@ -636,13 +636,10 @@ def create_app(root=None, testing=False, garden=None):
         folder = inside(store.output, f"{slug(namespace)}/{slug(user)}")
         if not (folder / "index.html").exists():
             raise ValueError("Build the website before downloading it.")
-        memory = BytesIO()
-        with zipfile.ZipFile(memory, "w", zipfile.ZIP_DEFLATED) as archive:
-            for file in folder.rglob("*"):
-                if file.is_file():
-                    archive.write(file, file.relative_to(folder))
-        memory.seek(0)
-        return send_file(memory, as_attachment=True, download_name=f"{namespace}-{user}-static.zip", mimetype="application/zip")
+        with store.garden_lock(namespace, user):
+            archive = package_site(store, folder)
+            memory = BytesIO(archive.read_bytes())
+        return send_file(memory, as_attachment=True, download_name="the_allotment.zip", mimetype="application/zip")
 
     @app.route("/setup/", methods=["GET", "POST"])
     def setup():

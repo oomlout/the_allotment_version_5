@@ -28,7 +28,7 @@
 <p class="action-error" data-testing-required {% if not d.needs_test %}hidden{% endif %}>Platform needs testing. <a href="{{ d.test_url }}">Open test</a></p>
 </div>{% endfor %}</div>
 <details class="post-overrides"><summary>Overrides for this post</summary><div class="defaults-grid">{% for d in destinations %}<label>{{ d.name }}<select name="frame_{{ d.id }}"><option value="default">Default · {{ framing_choices[framing[d.id]] }}</option>{% for key,label in framing_choices.items() %}<option value="{{ key }}" {% if post.get('sowing_overrides',{}).get(d.id,{}).get('framing')==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>{% endfor %}</div><a href="{{ url_for('framing_defaults',namespace=namespace,user=user) }}">Edit platform defaults</a></details>
-<div class="creation-actions"><button class="button primary" data-launch type="submit" {% if not published or post.status=='draft' %}disabled{% endif %}>Launch</button><span data-selection-status>Select destinations.</span></div>
+<div class="creation-actions">{% if not published or post.status=='draft' %}<button class="button primary" type="submit" form="local-publication-form">{{ 'Publish local edits first' if published else 'Publish locally first' }}</button>{% endif %}<button class="button primary" data-launch type="submit" {% if not published or post.status=='draft' %}disabled{% endif %}>Launch</button><span data-selection-status role="status">Select destinations.</span></div>
 <p class="sow-note">Website and summary are always built. Social posts stay unsent until you submit them manually.</p>
 <p class="action-error" data-sow-error role="alert" hidden></p>
 <a class="button secondary small" data-platform-setup hidden>Open platform test</a>

@@ -31,20 +31,14 @@ steps:
   - 0.55
   - 0.36
 - command: prepare_open
+  # Sidebar Post opens a new composer; it is not the final Share control.
+  # Match the icon alone across the sidebar so labels/spacing can change.
   template: create.png
   region:
   - 0.005
-  - 0.50
-  - 0.045
-  - 0.66
-  seconds: 1
-- command: prepare_open
-  template: add-image.png
-  region:
-  - 0.05
-  - 0.55
-  - 0.15
-  - 0.75
+  - 0.17
+  - 0.125
+  - 0.88
   seconds: 1
 - command: prepare_open
   text: Select From Computer

@@ -13,7 +13,7 @@ dependencies = ["Flask>=3.1,<4", "PyYAML>=6,<7", "tzdata>=2024.1", "psutil>=6,<8
 test = ["pytest>=8,<10", "playwright>=1.60,<2"]
 
 [tool.setuptools.package-data]
-allotment = ["templates/*.html", "static/*", "static/vendor/cropper/*", "plugins/*.yaml", "guides/*.md", "presets/*.yaml", "roboclick/*.md", "roboclick/actions/*/working.py", "preparation_actions/*/working.py"]
+allotment = ["templates/*.html", "static/*", "static/platform-logos/*", "static/vendor/cropper/*", "plugins/*.yaml", "guides/*.md", "presets/*.yaml", "roboclick/*.md", "roboclick/actions/*/working.py", "preparation_actions/*/working.py"]
 
 [tool.setuptools.packages.find]
 include = ["allotment*"]

@@ -313,6 +313,9 @@ class Store:
         for path in [*sorted(self.plugins_dir.glob("*.yaml")), *sorted((self.local / "plugins").glob("*.yaml"))]:
             data = read_yaml(path)
             if data.get('kind') in {'harvest','translation'}:continue
+            if data.get('id') == 'whatsapp_channel' and data.get('channel_search_recovery'):
+                from .whatsapp_channel_recovery import bind
+                data = bind(data)
             result[slug(data["id"])] = data
         return result
 

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="{% block description %}{{ profile.bio }}{% endblock %}"><meta name="color-scheme" content="light">
+<title>{% block title %}{{ profile.display_name }} · The Allotment{% endblock %}</title>
+<link rel="stylesheet" href="{{ prefix }}assets/style.css"><link rel="stylesheet" href="{{ prefix }}assets/theme.css"><link rel="stylesheet" href="{{ prefix }}assets/custom.css">{% if profile.avatar %}<link rel="icon" href="{{ prefix }}{{ profile.avatar }}">{% endif %}
+</head><body class="layout-{{ profile.theme.layout }} density-{{ profile.theme.density }}">
+<a class="skip-link" href="#main">Skip to content</a><div class="public-shell">
+<header class="public-top"><a href="{{ prefix }}index.html" class="wordmark">{{ profile.display_name }}<span class="brand-dot" aria-hidden="true"></span></a><nav aria-label="Main navigation"><a href="{{ prefix }}index.html" {% if not follow %}aria-current="page"{% endif %}>Posts</a><a href="{{ prefix }}follow/index.html" {% if follow %}aria-current="page"{% endif %}>Follow <span aria-hidden="true">↗</span></a></nav></header>
+<main id="main">{% block content %}{% endblock %}</main>
+<footer class="site-footer"><a href="{{ prefix }}index.html">{{ profile.display_name }} <span> / The Allotment</span></a><a href="{{ prefix }}follow/index.html">Follow elsewhere ↗</a></footer>
+</div></body></html>

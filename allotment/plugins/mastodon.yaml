@@ -22,31 +22,33 @@ steps:
 - command: prepare_visual_identity
   label: Check the exact owner profile
   region:
-  - 0.347
-  - 0.342
-  - 0.45
-  - 0.365
+  - 0.34
+  - 0.28
+  - 0.48
+  - 0.40
   owner_text: Edit profile
   owner_region:
-  - 0.57
-  - 0.315
-  - 0.625
-  - 0.35
+  - 0.55
+  - 0.28
+  - 0.65
+  - 0.38
   profile_url: '{{ profile_url }}'
 - command: prepare_open
   label: Open New Post
+  # Detect the label, not a pixel-identical button at one vertical position.
+  text: New Post
   region:
   - 0.18
-  - 0.34
-  - 0.245
-  - 0.39
-  template: create.png
+  - 0.17
+  - 0.335
+  - 0.44
 - command: prepare_visual_focus
   label: Focus the empty composer frame
+  # A small inside corner tolerates a different editor width or height.
   template: editor.png
   region:
   - 0.335
-  - 0.72
+  - 0.18
   - 0.655
   - 0.94
 - command: prepare_text
@@ -69,8 +71,9 @@ steps:
   - 0.75
   - 0.75
   ready_region:
-  - 0.59
-  - 0.93
-  - 0.65
-  - 0.99
+  - 0.35
+  - 0.48
+  - 0.66
+  - 0.98
+  # Detection only: Publish is never clicked.
   ready_template: ready.png

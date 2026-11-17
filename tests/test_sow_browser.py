@@ -4,6 +4,29 @@ from test_studio_browser import studio
 from test_sow_review import attempted,NS,USER
 
 
+@pytest.mark.parametrize('has_published_version',[False,True])
+def test_sow_explains_local_publication_and_offers_it_next_to_launch(studio,has_published_version):
+    from allotment.lifecycle import publish_local
+    store,origin,browser=studio
+    post=store.save_draft(NS,USER,'Initial text')
+    if has_published_version:
+        publish_local(store,NS,USER,post['id'])
+        store.save_draft(NS,USER,'Edited text',post_id=post['id'])
+    page=browser.new_page()
+    page.goto(f'{origin}/g/{NS}/{USER}/p/{post["id"]}/')
+    sow=page.locator('#sow-panel');launch=sow.get_by_role('button',name='Launch',exact=True)
+    expect(launch).to_be_disabled()
+    expect(sow.locator('[data-selection-status]')).to_have_text('Publish locally to enable Launch.')
+    expect(launch).to_have_attribute('title','Publish locally to enable Launch.')
+    assert launch.evaluate('el=>getComputedStyle(el).cursor')=='not-allowed'
+    sow.get_by_role('button',name='Publish local edits first' if has_published_version else 'Publish locally first',exact=True).click()
+    expect(launch).to_be_enabled()
+    expect(sow.locator('[form="local-publication-form"]')).to_have_count(0)
+    assert store.published(NS,USER,post['id'])['text']==('Edited text' if has_published_version else 'Initial text')
+    assert store.jobs(NS,USER)==[]
+    page.close()
+
+
 def test_select_all_active_excludes_git_and_manual_icons_work_before_attempt(studio,monkeypatch):
     store,origin,browser=studio
     post=store.save_draft(NS,USER,'No attempts yet')

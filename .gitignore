@@ -5,6 +5,10 @@ __pycache__/
 .local/
 garden/
 allotment_static/
+website_static/dist/
+website_static/the_allotment.zip
+website_static/.export-*/
+website_static/.build.lock/
 dist/
 build/
 *.egg-info/

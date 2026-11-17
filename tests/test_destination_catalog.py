@@ -77,10 +77,10 @@ def test_full_addresses_render_and_public_site_uses_distinct_names(store):
     assert 'id="destination-whatsapp"' in html
     assert 'id="destination-discord"' in html
     output = build_site(store, NS, USER)
-    public = (output / "index.html").read_text(encoding="utf-8")
+    public = (output / "follow" / "index.html").read_text(encoding="utf-8")
     for address in EXPECTED.values():
         assert address in public
-    assert "Facebook profile ↗" in public and "Facebook page ↗" in public and "WhatsApp channel ↗" in public
+    assert "Facebook profile" in public and "Facebook page" in public and "WhatsApp channel" in public
 
 
 def test_public_channel_address_requires_opt_in_and_never_uses_private_browser_target(store):

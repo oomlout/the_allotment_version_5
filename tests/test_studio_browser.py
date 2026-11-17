@@ -52,13 +52,13 @@ def test_browser_draft_media_publish_worker_theme_and_static_download(studio):
     page.get_by_text("Website built.", exact=True).wait_for()
     with page.expect_download() as download:
         page.get_by_role("link", name="Download website", exact=True).click()
-    assert download.value.suggested_filename == "the_allotment-oomlout_main-static.zip"
+    assert download.value.suggested_filename == "the_allotment.zip"
     page.goto(origin + "/allotment_static/the_allotment/oomlout_main/")
     assert page.locator("body").get_attribute("class") == "layout-cards density-comfortable"
     assert page.locator(".post-text").inner_text() == "A real browser test 🌱"
     assert page.locator(".post-text").evaluate("el => getComputedStyle(el).color") == "rgb(18, 52, 86)"
     assert page.locator(".media-grid img").evaluate("image => image.complete && image.naturalWidth > 0")
-    page.get_by_role("link", name="Permalink ↗", exact=True).click()
+    page.get_by_role("link", name="View post", exact=True).click()
     assert page.locator(".post-text").inner_text() == "A real browser test 🌱"
     page.close()
 

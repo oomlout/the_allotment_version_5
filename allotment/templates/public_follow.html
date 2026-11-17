@@ -1,0 +1,12 @@
+{% extends 'public_base.html' %}
+{% block title %}Follow {{ profile.display_name }} · The Allotment{% endblock %}
+{% block content %}
+<section class="follow-intro"><p class="eyebrow">{{ profile.display_name }}</p><h1>Follow wherever<br>you like<span class="heading-dot">.</span></h1><p>Find me on your favourite platform.</p></section>
+<section class="follow-grid" aria-label="Public profiles">
+{% for link in follow_links %}<a class="follow-card" href="{{ link.url }}" rel="me noopener noreferrer">
+{% if link.logo %}<img class="platform-logo" src="{{ prefix }}assets/logos/{{ link.logo }}" alt="" width="28" height="28">{% else %}<span class="platform-fallback" aria-hidden="true">↗</span>{% endif %}
+<span><strong>{{ link.name }}</strong><small>{{ link.address }}</small></span><span class="outbound-arrow" aria-hidden="true">↗</span></a>
+{% else %}<p class="empty">No public profiles added yet.</p>{% endfor %}
+{% if profile.website %}<a class="follow-card" href="{{ profile.website }}" rel="me noopener noreferrer"><span class="platform-fallback" aria-hidden="true">↗</span><span><strong>Website</strong><small>{{ profile.website }}</small></span><span class="outbound-arrow" aria-hidden="true">↗</span></a>{% endif %}
+</section><a class="back-link follow-back" href="{{ prefix }}index.html">← Back to posts</a>
+{% endblock %}

@@ -20,7 +20,7 @@
 <body class="{{ 'embedded-tests' if embedded else '' }}"><div class="shell"><aside class="sidebar">
 <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('grid') }}</span>The Allotment</a>
 {% if profile %}<nav aria-label="Studio navigation">
-{% for endpoint,label,glyph,key in [('garden','Posts','grid','garden'),('compose','New post','plus','compose'),('creation.tag_browser','Tags','grid','tags'),('destinations','Sowing','share','destinations'),('inspect_profiles','Inspect','external','inspect'),('framing_defaults','Defaults','settings','defaults'),('worker_settings','Settings','settings','worker')] %}
+{% for endpoint,label,glyph,key in [('garden','Posts','grid','garden'),('compose','New post','plus','compose'),('creation.tag_browser','Tags','grid','tags'),('destinations','Sowing','share','destinations'),('inspect_profiles','Inspect','external','inspect'),('website','Website','globe','website'),('framing_defaults','Defaults','settings','defaults'),('worker_settings','Settings','settings','worker')] %}
 <a class="nav-item {% if active == key %}active{% endif %}" href="{{ url_for(endpoint, namespace=namespace, user=user) }}">{{ icon(glyph) }}{{ label }}</a>{% endfor %}</nav>{% endif %}
 </aside>
 <main class="main"><header class="topbar">{% if profile %}{{ namespace }} / <strong>{{ user }}</strong>{% else %}Setup{% endif %}</header><div class="workspace">

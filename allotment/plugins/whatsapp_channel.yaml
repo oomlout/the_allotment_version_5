@@ -12,6 +12,11 @@ base_url: https://web.whatsapp.com
 max_chars: 1024
 target_required: true
 target_kind: channel
+channel_search_recovery:
+  text: Discover more
+  # Exclude the grid icon from the OCR line, while allowing vertical movement.
+  region: [0.163, 0.45, 0.25, 0.88]
+  search_region: [0.045, 0.13, 0.33, 0.23]
 target_label: Channel
 target_path_pattern: /?
 target_no_query: true
@@ -51,10 +56,11 @@ steps:
 - command: prepare_search_group
   label: Find the configured channel
   text: Search
+  # Keep the magnifying-glass icon outside the exact text match.
   region:
-  - 0.045
+  - 0.067
   - 0.14
-  - 0.32
+  - 0.16
   - 0.18
   result_region:
   - 0.07
